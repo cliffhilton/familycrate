@@ -1,0 +1,1340 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function uid() { return Date.now() + Math.floor(Math.random() * 99999); }
+function getMember(members, id) { return members.find(m => m.id === id) || null; }
+function dateStr(d) { return d.toISOString().slice(0, 10); }
+function addDays(ds, n) { const d = new Date(ds + "T12:00:00"); d.setDate(d.getDate() + n); return dateStr(d); }
+function startOfWeek(ds) { const d = new Date(ds + "T12:00:00"); d.setDate(d.getDate() - d.getDay()); return dateStr(d); }
+function isoToDisplay(ds, opts) { return new Date(ds + "T12:00:00").toLocaleDateString("en-US", opts || { weekday:"short", month:"short", day:"numeric" }); }
+function isoToShort(ds) { const d = new Date(ds + "T12:00:00"); return `${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]} ${d.getDate()}`; }
+
+const TODAY = dateStr(new Date());
+const PERIOD_START = addDays(TODAY, -14);
+
+// Time helpers
+function timeToMinutes(t) {
+  if (!t) return -1;
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return -1;
+  let h = parseInt(m[1]), min = parseInt(m[2]);
+  const pm = m[3].toUpperCase() === "PM";
+  if (pm && h !== 12) h += 12;
+  if (!pm && h === 12) h = 0;
+  return h * 60 + min;
+}
+function minutesToTime12(mins) {
+  const h = Math.floor(mins / 60), m = mins % 60;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${hh}:${String(m).padStart(2,"0")} ${ampm}`;
+}
+// Generate time options every 15 min from 6am to 10pm
+const TIME_OPTIONS = [];
+for (let m = 360; m <= 1320; m += 15) TIME_OPTIONS.push(minutesToTime12(m));
+
+const DAY_START = 6 * 60;
+const DAY_END   = 22 * 60;
+const HOUR_PX   = 64;
+const MIN_PX    = HOUR_PX / 60;
+function minutesToTop(m) { return (m - DAY_START) * MIN_PX; }
+function durationToPx(d) { return Math.max(d * MIN_PX, 22); }
+
+// ─── Recurrence ───────────────────────────────────────────────────────────────
+function appearsOnDate(item, ds) {
+  if (!item.repeat || item.repeat === "none") return item.date === ds;
+  if (!item.startDate || ds < item.startDate) return false;
+  const start = new Date(item.startDate + "T12:00:00");
+  const target = new Date(ds + "T12:00:00");
+  const diff = Math.round((target - start) / 86400000);
+  if (item.repeat === "daily") return diff >= 0;
+  if (item.repeat === "weekly-dow") return target.getDay() === start.getDay() && diff >= 0;
+  if (item.repeat === "monthly") return target.getDate() === start.getDate() && diff >= 0;
+  return false;
+}
+function eventAppearsOn(ev, ds) {
+  if (!ev.repeat || ev.repeat === "none") return ev.date === ds;
+  if (!ev.startDate || ds < ev.startDate) return false;
+  const start = new Date(ev.startDate + "T12:00:00");
+  const target = new Date(ds + "T12:00:00");
+  const diff = Math.round((target - start) / 86400000);
+  if (ev.repeat === "daily") return diff >= 0;
+  if (ev.repeat === "weekly-dow") return target.getDay() === start.getDay() && diff >= 0;
+  if (ev.repeat === "monthly") return target.getDate() === start.getDate() && diff >= 0;
+  return false;
+}
+function doneKey(itemId, memberId, ds) { return `${itemId}__${memberId}__${ds}`; }
+function lastDow(dow) {
+  const d = new Date(TODAY + "T12:00:00");
+  while (d.getDay() !== dow) d.setDate(d.getDate() - 1);
+  return dateStr(d);
+}
+
+// ─── Layout: side-by-side overlapping blocks ──────────────────────────────────
+function layoutBlocks(blocks) {
+  const sorted = [...blocks].sort((a, b) => a.top - b.top);
+  const cols = [];
+  sorted.forEach(block => {
+    let placed = false;
+    for (let c = 0; c < cols.length; c++) {
+      if (cols[c].end <= block.top + 2) { block.col = c; cols[c].end = block.top + block.height; placed = true; break; }
+    }
+    if (!placed) { block.col = cols.length; cols.push({ end: block.top + block.height }); }
+  });
+  sorted.forEach(block => {
+    const overlapping = sorted.filter(b => b !== block && b.top < block.top + block.height && b.top + b.height > block.top);
+    block.totalCols = Math.max(block.col, ...overlapping.map(b => b.col ?? 0)) + 1;
+  });
+  return sorted;
+}
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+const SCHOOL_COLOR = "#7A8FA0";
+const CKY_COLOR    = "#8A7840";
+const SHARED_COLOR = "#6A7A8A";
+const MEMBER_COLORS = { 1:"#8A6A50", 2:"#A87070", 3:"#4A8B8B", 4:"#5A7A9A", 5:"#6A8C6E" };
+
+// ─── Seed Data ────────────────────────────────────────────────────────────────
+const INIT_MEMBERS = [
+  { id:1, name:"Cliff",  color:MEMBER_COLORS[1], photo:null, email:"", phone:"" },
+  { id:2, name:"Ashley", color:MEMBER_COLORS[2], photo:null, email:"", phone:"" },
+  { id:3, name:"Liv",    color:MEMBER_COLORS[3], photo:null, email:"", phone:"" },
+  { id:4, name:"Peter",  color:MEMBER_COLORS[4], photo:null, email:"", phone:"" },
+  { id:5, name:"Boone",  color:MEMBER_COLORS[5], photo:null, email:"", phone:"" },
+];
+
+const INIT_ITEMS = [
+  { id:1001, text:"Morning Routine",      points:3,  category:"chores", assignedTo:[3,4,5], repeat:"daily",      startDate:TODAY,      time:"7:00 AM",  duration:45  },
+  { id:1002, text:"Read for 30 mins",     points:4,  category:"chores", assignedTo:[3,4,5], repeat:"daily",      startDate:TODAY,      time:"4:00 PM",  duration:30  },
+  { id:1003, text:"Clear dinner table",   points:5,  category:"chores", assignedTo:[3,4,5], repeat:"daily",      startDate:TODAY,      time:"6:00 PM",  duration:20  },
+  { id:1004, text:"Surprise Someone",     points:5,  category:"chores", assignedTo:[1,2,3,4,5], repeat:"weekly-dow", startDate:lastDow(0), time:"2:00 PM", duration:30 },
+  { id:2001, text:"Kitchen floors",       points:6,  category:"chores", assignedTo:[5], repeat:"daily",      startDate:TODAY,      time:"7:00 PM",  duration:20  },
+  { id:2002, text:"Put silverware away",  points:3,  category:"chores", assignedTo:[5], repeat:"daily",      startDate:TODAY,      time:"7:20 PM",  duration:15  },
+  { id:2003, text:"Practice Fiddle",      points:4,  category:"chores", assignedTo:[5], repeat:"daily",      startDate:TODAY,      time:"4:00 PM",  duration:30  },
+  { id:2004, text:"Shoes away (garage)",  points:3,  category:"chores", assignedTo:[5], repeat:"daily",      startDate:TODAY,      time:"5:00 PM",  duration:15  },
+  { id:2010, text:"Sort laundry",         points:5,  category:"chores", assignedTo:[5], repeat:"weekly-dow", startDate:lastDow(0), time:"8:00 AM",  duration:20  },
+  { id:2011, text:"Vacuum 2nd floor",     points:10, category:"chores", assignedTo:[5], repeat:"weekly-dow", startDate:lastDow(1), time:"1:00 PM",  duration:30  },
+  { id:2012, text:"Peter/Boone: CHORES",  points:8,  category:"chores", assignedTo:[4,5], repeat:"weekly-dow", startDate:lastDow(2), time:"4:00 PM", duration:30 },
+  { id:2013, text:"Boone: Homework",      points:4,  category:"chores", assignedTo:[5], repeat:"weekly-dow", startDate:lastDow(2), time:"5:00 PM",  duration:30  },
+  { id:2014, text:"Dirty clothes to basement", points:5, category:"chores", assignedTo:[5], repeat:"weekly-dow", startDate:lastDow(4), time:"4:00 PM", duration:15 },
+  { id:3001, text:"Empty dishwasher",     points:5,  category:"chores", assignedTo:[4], repeat:"daily",      startDate:TODAY,      time:"7:00 PM",  duration:15  },
+  { id:3002, text:"Load dishwasher",      points:5,  category:"chores", assignedTo:[4], repeat:"daily",      startDate:TODAY,      time:"7:15 PM",  duration:15  },
+  { id:3003, text:"Empty trash",          points:5,  category:"chores", assignedTo:[4], repeat:"daily",      startDate:TODAY,      time:"7:30 PM",  duration:10  },
+  { id:3010, text:"Sweep kitchen floor",  points:6,  category:"chores", assignedTo:[4], repeat:"weekly-dow", startDate:lastDow(0), time:"9:00 AM",  duration:20  },
+  { id:3011, text:"Take out trash",       points:8,  category:"chores", assignedTo:[4], repeat:"weekly-dow", startDate:lastDow(0), time:"9:20 AM",  duration:15  },
+  { id:4001, text:"Water Plants",         points:3,  category:"chores", assignedTo:[3], repeat:"weekly-dow", startDate:lastDow(2), time:"9:00 AM",  duration:15  },
+  { id:4010, text:"Toilets - Kids Bath",  points:10, category:"chores", assignedTo:[3], repeat:"weekly-dow", startDate:lastDow(6), time:"9:00 AM",  duration:30  },
+  { id:4011, text:"Your Laundry",         points:8,  category:"chores", assignedTo:[3], repeat:"weekly-dow", startDate:lastDow(4), time:"8:00 AM",  duration:30  },
+  { id:4012, text:"Dirty clothes to basement", points:5, category:"chores", assignedTo:[3], repeat:"weekly-dow", startDate:lastDow(3), time:"8:00 PM", duration:15 },
+  { id:4013, text:"Babysit Suvir",        points:15, category:"chores", assignedTo:[3], repeat:"weekly-dow", startDate:lastDow(3), time:"6:00 PM",  duration:90  },
+  { id:5001, text:"Deep clean something", points:12, category:"chores", assignedTo:[3,4,5], repeat:"weekly-dow", startDate:lastDow(6), time:"1:00 PM", duration:60, note:"Ask mom or dad what to deep clean" },
+  { id:6001, text:"Oat milk",             points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6002, text:"Eggs",                 points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6003, text:"Bread",                points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6004, text:"Apples",               points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6005, text:"Peanut butter",        points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6006, text:"Pasta & sauce",        points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6007, text:"Chicken breasts",      points:0,  category:"groceries", assignedTo:[], repeat:"none", date:TODAY },
+  { id:6008, text:"Dog food",             points:0,  category:"groceries", assignedTo:[1], repeat:"none", date:TODAY },
+];
+
+const INIT_EVENTS = [
+  // Family / All — Tue & Thu
+  { id:100, title:"Bible Study / Lit Reading", memberIds:[1,2,3,4,5], time:"7:00 AM", duration:60, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:101, title:"Bible Study / Lit Reading", memberIds:[1,2,3,4,5], time:"7:00 AM", duration:60, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:102, title:"All: Notgrass",             memberIds:[1,2,3,4,5], time:"8:00 AM", duration:60, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(6) },
+  // Peter — HLCS Monday only
+  { id:200, title:"Peter: HLCS",               memberIds:[4], time:"8:00 AM", duration:420, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(1) },
+  // Peter homeschool Tue
+  { id:210, title:"Peter: Latin",              memberIds:[4],   time:"8:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:211, title:"Ashley/Peter: Break & Prep",memberIds:[2,4], time:"9:00 AM",  duration:45,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:212, title:"Peter: Comp & FMMA Review", memberIds:[4],   time:"10:00 AM", duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:213, title:"Peter/Olivia: Math",        memberIds:[3,4], time:"11:00 AM", duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:214, title:"Lunch / Read aloud",        memberIds:[2,3,4], time:"12:00 PM", duration:60, type:"school",  color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:215, title:"Olivia/Peter: Reading",     memberIds:[3,4], time:"1:00 PM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:216, title:"Liv to Piano & YMCA",       memberIds:[2,3,4], time:"2:00 PM", duration:90, type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  // Peter Wed
+  { id:220, title:"Peter: Latin & Math",       memberIds:[4],   time:"8:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  { id:221, title:"Peter: Comp & FMMA",        memberIds:[4],   time:"9:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  { id:222, title:"Ashley/Peter: Sons & Daughters", memberIds:[2,4], time:"10:00 AM", duration:120, type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  // Peter Thu
+  { id:230, title:"Peter: Latin",              memberIds:[4],   time:"9:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:231, title:"Leave for Drums",           memberIds:[2,3,4], time:"10:00 AM", duration:30, type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:232, title:"Peter/Ashley: Drums",       memberIds:[2,4], time:"11:00 AM", duration:60,  type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:233, title:"Home / Lunch / Read",       memberIds:[2,3,4], time:"12:00 PM", duration:60, type:"school",  color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:234, title:"Peter: Comp",               memberIds:[4],   time:"1:00 PM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:235, title:"Peter: FMMA",               memberIds:[4],   time:"3:00 PM",  duration:60,  type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  // Peter Fri
+  { id:240, title:"Peter/Ashley: Latin Video", memberIds:[2,4], time:"8:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(5) },
+  { id:241, title:"Ashley/Peter: FMMA Reading",memberIds:[2,4], time:"9:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(5) },
+  // Boone school Tue–Fri
+  { id:300, title:"Boone: HLS", memberIds:[5], time:"8:00 AM", duration:420, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:301, title:"Boone: HLS", memberIds:[5], time:"8:00 AM", duration:420, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  { id:302, title:"Boone: HLS", memberIds:[5], time:"8:00 AM", duration:420, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:303, title:"Boone: HLS", memberIds:[5], time:"8:00 AM", duration:420, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(5) },
+  // Boone Mon
+  { id:310, title:"Ashley/Boone: YMCA",  memberIds:[2,5], time:"9:00 AM",  duration:90,  type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(1) },
+  { id:311, title:"Ashley: Run Errands", memberIds:[2],   time:"10:30 AM", duration:60,  type:"activity", color:MEMBER_COLORS[2], repeat:"weekly-dow", startDate:lastDow(1) },
+  { id:312, title:"Ashley/Boone: Fiddle",memberIds:[2,5], time:"12:00 PM", duration:60,  type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(1) },
+  // Liv Mon
+  { id:400, title:"Olivia: HLCS",        memberIds:[3], time:"11:00 AM", duration:300, type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(1) },
+  // Liv Tue
+  { id:410, title:"Olivia: Piano",       memberIds:[3], time:"8:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:411, title:"Olivia: GEO",         memberIds:[3], time:"9:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:412, title:"Liv Piano",           memberIds:[3], time:"2:00 PM",  duration:60,  type:"activity", color:MEMBER_COLORS[3], repeat:"weekly-dow", startDate:lastDow(2) },
+  { id:413, title:"CKY Track Practice",  memberIds:[3], time:"6:00 PM",  duration:90,  type:"activity", color:CKY_COLOR, repeat:"weekly-dow", startDate:lastDow(2) },
+  // Liv Wed (CEC)
+  { id:420, title:"Olivia: CEC Day",     memberIds:[3], time:"9:00 AM",  duration:300, type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  { id:421, title:"Olivia: Drama",       memberIds:[3], time:"2:00 PM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  { id:422, title:"Olivia: DT",          memberIds:[3], time:"4:00 PM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(3) },
+  // Liv Thu
+  { id:430, title:"Olivia: Math",        memberIds:[3], time:"8:00 AM",  duration:60,  type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:431, title:"Leave for Drums",     memberIds:[2,3,4], time:"10:00 AM", duration:30, type:"activity", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:432, title:"Home / Lunch / Read", memberIds:[2,3,4], time:"12:00 PM", duration:60, type:"school",  color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  { id:433, title:"CKY Track Practice",  memberIds:[3], time:"6:00 PM",  duration:90,  type:"activity", color:CKY_COLOR, repeat:"weekly-dow", startDate:lastDow(4) },
+  // Liv Fri
+  { id:440, title:"Olivia: HLCS",        memberIds:[3], time:"8:00 AM",  duration:300, type:"school",   color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(5) },
+  // Sat
+  { id:450, title:"All: Notgrass",       memberIds:[1,2,3,4,5], time:"8:00 AM", duration:60, type:"school", color:SCHOOL_COLOR, repeat:"weekly-dow", startDate:lastDow(6) },
+];
+
+const INIT_REWARDS = [
+  { id:1, title:"30 min extra screen time", points:10, icon:"📱" },
+  { id:2, title:"Pick dinner",              points:8,  icon:"🍕" },
+  { id:3, title:"Stay up 30 min late",      points:12, icon:"🌙" },
+  { id:4, title:"Movie night pick",         points:15, icon:"🎬" },
+  { id:5, title:"Skip one chore",           points:20, icon:"✨" },
+  { id:6, title:"Cash out $5",              points:20, icon:"💵" },
+];
+
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAYS_SHORT   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+const DAYS_LONG    = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+// ─── Favicon injection ────────────────────────────────────────────────────────
+const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 71.6'><style>.f0{fill:#8f6a4a}.f1{fill:#333;mix-blend-mode:multiply;opacity:.2}.f2{isolation:isolate}</style><g class='f2'><g><path class='f0' d='M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z'/><path class='f1' d='M24.8,19.1c.7.7,1.4,1.4,2.1,2.2h4.1c-.8-.7-1.5-1.4-2.3-2.1h-4Z'/><path class='f1' d='M42.9,19.1v2.1h3.3v-2.1h-3.3Z'/><path class='f1' d='M29.8,54v-2.2h-3.5v2.2h3.5Z'/><path class='f1' d='M45.6,54c-.7-.7-1.4-1.4-2.1-2.2h-4.8c.7.7,1.4,1.5,2.1,2.2h4.9Z'/></g></g></svg>`;
+
+// ─── CSS ─────────────────────────────────────────────────────────────────────
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#EEF4F8;
+  --surf:#F8FBFD;
+  --bdr:#D4E2EC;
+  --muted:#8AA0B0;
+  --ink:#1E2D3A;
+  --ink2:#3A5060;
+  --sky:#5B8FA8;
+  --sky-lt:#E0EEF5;
+  --sky-bd:#A8CCDE;
+  --gold:#C49A3C;
+  --gold-lt:#FDF5DC;
+  --gold-bd:#EDD898;
+  --sh:0 2px 14px rgba(30,45,58,.06);
+  --sh-lg:0 8px 36px rgba(30,45,58,.13);
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px;}
+.app{display:flex;flex-direction:column;height:100dvh;width:100%;}
+
+/* Header */
+.hdr{display:flex;align-items:center;padding:8px 16px;background:var(--surf);border-bottom:1px solid var(--bdr);flex-shrink:0;gap:10px;box-shadow:var(--sh);}
+.hdr-logo{display:flex;align-items:center;flex-shrink:0;}
+.hdr-members{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;flex:1;-webkit-overflow-scrolling:touch;}
+.hdr-members::-webkit-scrollbar{display:none;}
+.hdr-gear{background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--muted);flex-shrink:0;display:flex;align-items:center;transition:all .15s;}
+.hdr-gear svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.hdr-gear:hover{background:var(--sky-lt);color:var(--sky);}
+
+/* Member chip — filter: tap = show ONLY that person */
+.mchip{display:flex;align-items:center;gap:5px;padding:4px 10px 4px 4px;border-radius:100px;background:var(--bg);border:1.5px solid var(--bdr);cursor:pointer;transition:all .15s;position:relative;flex-shrink:0;white-space:nowrap;}
+.mchip:active{transform:scale(.96);}
+.mchip.active{background:var(--sky);border-color:var(--sky);}
+.mchip.active .mchip-name{color:#fff;}
+.mchip-name{font-size:12px;font-weight:500;color:var(--ink2);}
+.mchip-pts{background:var(--gold);color:#fff;font-size:9px;font-weight:600;padding:2px 6px;border-radius:100px;margin-left:2px;white-space:nowrap;}
+.mchip.active .mchip-pts{background:rgba(255,255,255,.3);color:#fff;}
+
+/* Nav */
+.nav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;box-shadow:0 -2px 10px rgba(30,45,58,.05);}
+.nbtn{padding:8px 0 calc(10px + env(safe-area-inset-bottom,0px));border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;transition:color .15s;}
+.nbtn.on{color:var(--sky);}
+.nbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* Page */
+.page{display:flex;flex:1 1 0;min-height:0;overflow:hidden;position:relative;}
+
+/* ── Calendar Drawer ── */
+.cal-overlay{position:absolute;inset:0;background:rgba(20,35,48,.28);z-index:50;}
+.cal-drawer{position:absolute;left:0;top:0;bottom:0;width:260px;background:var(--surf);border-right:1px solid var(--bdr);z-index:51;display:flex;flex-direction:column;box-shadow:var(--sh-lg);transform:translateX(-100%);transition:transform .22s cubic-bezier(.4,0,.2,1);}
+.cal-drawer.open{transform:translateX(0);}
+.cal-inner{padding:14px;overflow-y:auto;flex:1 1 0;}
+.cal-nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cal-mname{font-size:14px;font-weight:500;color:var(--ink);}
+.cal-navs{display:flex;gap:3px;}
+.ibtn{width:24px;height:24px;border:none;background:var(--bg);border-radius:6px;cursor:pointer;font-size:13px;color:var(--ink2);display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.ibtn:hover{background:var(--sky-lt);}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:12px;}
+.cdl{text-align:center;font-size:9px;font-weight:500;color:var(--muted);padding:2px 0;}
+.cc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:11px;cursor:pointer;position:relative;transition:all .12s;color:var(--ink2);}
+.cc:hover{background:var(--sky-lt);}
+.cc.today{background:var(--ink);color:#fff;font-weight:600;}
+.cc.sel{background:var(--sky);color:#fff;}
+.cc.other{opacity:.25;}
+.cc.hasdot::after{content:'';position:absolute;bottom:2px;width:3px;height:3px;border-radius:50%;background:var(--sky);}
+.cc.today.hasdot::after,.cc.sel.hasdot::after{background:rgba(255,255,255,.7);}
+.up-lbl{font-size:10px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
+.uev{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:var(--bg);border:1px solid var(--bdr);margin-bottom:4px;cursor:pointer;transition:all .13s;}
+.uev:hover{border-color:var(--sky);}
+.uev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.uev-body{flex:1;min-width:0;}
+.uev-title{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);}
+.uev-when{font-size:10px;color:var(--muted);}
+.add-ev-btn{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:7px;border:1.5px dashed var(--bdr);border-radius:8px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);transition:all .15s;margin-top:4px;}
+.add-ev-btn:hover{border-color:var(--sky);color:var(--sky);}
+
+/* ── Day View ── */
+.day-view{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.day-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--surf);}
+.cal-toggle{width:30px;height:30px;border:none;background:var(--bg);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;color:var(--ink2);}
+.cal-toggle:hover{background:var(--sky-lt);color:var(--sky);}
+.cal-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.day-nav-btns{display:flex;gap:3px;}
+.day-title{font-size:15px;font-weight:500;flex:1;color:var(--ink);}
+.day-pill{padding:4px 11px;border-radius:100px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;color:var(--ink2);transition:all .15s;}
+.day-pill:hover{border-color:var(--sky);color:var(--sky);}
+.view-toggle{display:flex;gap:0;border:1.5px solid var(--bdr);border-radius:8px;overflow:hidden;}
+.vt-btn{padding:5px 12px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;color:var(--muted);transition:all .15s;}
+.vt-btn.on{background:var(--sky);color:#fff;}
+
+/* Column headers */
+.col-hdrs{display:flex;border-bottom:1px solid var(--bdr);background:var(--surf);flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.col-hdrs::-webkit-scrollbar{display:none;}
+.gutter-hdr{width:48px;flex-shrink:0;border-right:1px solid var(--bdr);}
+.col-hdr{display:flex;align-items:center;gap:6px;padding:6px 10px;flex:1;border-right:1px solid var(--bdr);min-width:130px;white-space:nowrap;}
+.col-hdr:last-child{border-right:none;}
+.col-hdr-name{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;}
+.col-hdr-pts{font-size:10px;font-weight:600;color:#fff;background:var(--gold);padding:1px 7px;border-radius:100px;white-space:nowrap;flex-shrink:0;}
+
+/* Weekly column date header */
+.week-date-hdr{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 6px;flex:1;min-width:0;}
+.wdh-day{font-size:10px;color:var(--muted);}
+.wdh-date{font-size:13px;font-weight:500;}
+.wdh-date.today-date{background:var(--sky);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+
+/* Grid scroll */
+.grid-scroll{flex:1 1 0;overflow:auto;-webkit-overflow-scrolling:touch;position:relative;}
+.grid-body{display:flex;position:relative;}
+
+/* Time gutter */
+.time-gutter{width:48px;flex-shrink:0;position:relative;border-right:1px solid var(--bdr);}
+.time-lbl{position:absolute;right:5px;font-size:9px;color:var(--muted);line-height:1;transform:translateY(-50%);white-space:nowrap;}
+
+/* Hour lines */
+.hour-lines{position:absolute;left:0;right:0;top:0;pointer-events:none;z-index:0;}
+.hline{position:absolute;left:0;right:0;border-top:1px solid var(--bdr);opacity:.7;}
+
+/* Now line */
+.now-line{position:absolute;left:0;right:0;z-index:10;pointer-events:none;}
+.now-line::before{content:'';position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#E05050;}
+.now-line::after{content:'';position:absolute;left:0;right:0;top:-1px;height:2px;background:#E05050;}
+
+/* Person columns */
+.day-cols{display:flex;flex:1;position:relative;}
+.pcol{flex:1;min-width:130px;position:relative;border-right:1px solid var(--bdr);}
+.pcol:last-child{border-right:none;}
+
+/* Timed block */
+.tblock{position:absolute;border-radius:7px;padding:4px 6px;cursor:pointer;overflow:hidden;border:none;text-align:left;transition:filter .15s;}
+.tblock:hover{filter:brightness(.91);}
+.tblock-title{font-size:11px;font-weight:500;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tblock-time{font-size:9px;opacity:.75;margin-top:1px;}
+.tblock-note{font-size:9px;font-style:italic;opacity:.8;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tblock-chk{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:4px;border:1.5px solid rgba(255,255,255,.5);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;}
+.tblock-chk.on{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.8);}
+
+/* Drag ghost */
+.drag-ghost{position:absolute;pointer-events:none;z-index:99;opacity:.7;border-radius:7px;border:2px dashed rgba(255,255,255,.8);}
+
+/* Lists page */
+.lists-page{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.ltabs{display:flex;padding:0 16px;background:var(--surf);border-bottom:1px solid var(--bdr);flex-shrink:0;}
+.ltab{padding:10px 14px;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.ltab.on{color:var(--sky);border-bottom-color:var(--sky);font-weight:500;}
+.frow{display:flex;gap:5px;padding:8px 16px 5px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.frow::-webkit-scrollbar{display:none;}
+.fchip{padding:4px 10px;border-radius:100px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--ink2);white-space:nowrap;flex-shrink:0;transition:all .15s;display:flex;align-items:center;gap:4px;}
+.fchip.on{background:var(--sky);color:#fff;border-color:var(--sky);}
+.lscroll{flex:1 1 0;overflow-y:auto;padding:6px 16px;}
+.li{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surf);border-radius:11px;margin-bottom:5px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;}
+.li:hover{border-color:var(--sky);}
+.li.done{opacity:.4;}
+.li.done .li-text{text-decoration:line-through;}
+.lchk{width:20px;height:20px;border-radius:6px;border:2px solid var(--bdr);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;color:#fff;transition:all .15s;}
+.lchk.on{background:var(--sky);border-color:var(--sky);}
+.li-body{flex:1;min-width:0;}
+.li-text{font-size:13px;color:var(--ink);}
+.li-meta{display:flex;align-items:center;gap:4px;margin-top:2px;flex-wrap:wrap;}
+.li-who{font-size:11px;color:var(--muted);}
+.li-time{font-size:10px;color:var(--muted);background:var(--bg);padding:1px 5px;border-radius:3px;}
+.li-rep{font-size:10px;color:var(--muted);background:var(--bg);padding:1px 5px;border-radius:3px;}
+.li-note{font-size:10px;color:var(--gold);font-style:italic;}
+.pbadge{padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500;background:var(--gold-lt);color:var(--gold);border:1px solid var(--gold-bd);flex-shrink:0;white-space:nowrap;}
+.labar{display:flex;gap:6px;padding:7px 16px 11px;background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;}
+.ainput{flex:1;min-width:0;padding:9px 12px;border-radius:9px;border:1.5px solid var(--bdr);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;}
+.ainput:focus{border-color:var(--sky);}
+.ainput::placeholder{color:var(--muted);}
+.pinput{width:46px;flex-shrink:0;padding:9px 4px;border-radius:9px;border:1.5px solid var(--bdr);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;text-align:center;}
+.pinput:focus{border-color:var(--sky);}
+.abtn{flex-shrink:0;padding:9px 14px;border-radius:9px;border:none;background:var(--sky);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;}
+.abtn:active{transform:scale(.96);}
+.abtn:hover{background:var(--ink);}
+
+/* Points */
+.pts-page{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.pts-scroll{flex:1 1 0;overflow-y:auto;padding:16px;}
+.rate-box{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:12px 14px;background:var(--gold-lt);border:1.5px solid var(--gold-bd);border-radius:11px;margin-bottom:14px;}
+.rate-lbl{font-size:14px;font-weight:500;flex:1;min-width:100px;color:var(--ink);}
+.rate-note{font-size:11px;color:var(--ink2);width:100%;}
+.rate-inputs{display:flex;align-items:center;gap:5px;}
+.rsym{font-size:15px;color:var(--gold);font-weight:600;}
+.rin{width:52px;padding:5px 7px;border-radius:7px;border:1.5px solid var(--gold-bd);background:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--ink);outline:none;text-align:center;}
+.rin:focus{border-color:var(--gold);}
+.rper{font-size:12px;color:var(--muted);}
+.reset-btn{padding:5px 11px;border-radius:7px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--ink2);transition:all .15s;}
+.reset-btn:hover{border-color:#C06040;color:#C06040;}
+.lbc{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--surf);border-radius:11px;margin-bottom:7px;border:1.5px solid var(--bdr);transition:all .15s;}
+.lbc:hover{border-color:var(--sky);}
+.lbc-rank{font-size:18px;font-weight:300;color:var(--bdr);min-width:22px;text-align:center;}
+.lbc-rank.r1{color:var(--gold);}
+.lbc-rank.r2{color:#AAAAAA;}
+.lbc-rank.r3{color:#B8906A;}
+.lbc-info{flex:1;min-width:0;}
+.lbc-name{font-size:14px;font-weight:500;}
+.lbc-bar{height:4px;background:var(--bdr);border-radius:2px;margin-top:5px;overflow:hidden;}
+.lbc-fill{height:100%;border-radius:2px;transition:width .7s cubic-bezier(.34,1.56,.64,1);}
+.lbc-right{text-align:right;flex-shrink:0;}
+.lbc-dollar{font-size:20px;font-weight:500;line-height:1;color:var(--ink);}
+.lbc-pts{font-size:11px;color:var(--muted);margin-top:1px;}
+.store-title{font-size:15px;font-weight:500;margin:12px 0 3px;color:var(--ink);}
+.store-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.reward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px;margin-bottom:10px;}
+.reward-card{padding:12px 10px;background:var(--surf);border-radius:10px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;position:relative;}
+.reward-card:hover{border-color:var(--sky);transform:translateY(-1px);}
+.reward-icon{font-size:22px;margin-bottom:4px;}
+.reward-title{font-size:12px;font-weight:500;line-height:1.3;margin-bottom:3px;color:var(--ink);}
+.reward-pts{font-size:11px;color:var(--gold);font-weight:500;}
+.req-card{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surf);border-radius:9px;border:1.5px solid var(--bdr);margin-bottom:5px;}
+.req-icon{font-size:16px;}
+.req-body{flex:1;min-width:0;}
+.req-name{font-size:12px;font-weight:500;color:var(--ink);}
+.req-who{font-size:11px;color:var(--muted);}
+.req-actions{display:flex;gap:4px;}
+.req-approve{padding:4px 9px;border-radius:6px;border:none;background:#D4EDD4;color:#2A6A2A;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;}
+.req-decline{padding:4px 9px;border-radius:6px;border:none;background:#EDD4D4;color:#6A2A2A;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;}
+
+/* Settings */
+.set-page{flex:1 1 0;overflow-y:auto;padding:16px;}
+.set-sec{margin-bottom:22px;}
+.set-sec-title{font-size:15px;font-weight:500;margin-bottom:3px;color:var(--ink);}
+.set-sec-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.mer{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--surf);border-radius:10px;border:1.5px solid var(--bdr);margin-bottom:6px;cursor:pointer;transition:all .15s;}
+.mer:hover{border-color:var(--sky);}
+.mer-info{flex:1;min-width:0;}
+.mer-name{font-size:13px;font-weight:500;color:var(--ink);}
+.mer-contact{font-size:11px;color:var(--muted);}
+.mer-pts{font-size:11px;color:var(--gold);font-weight:500;}
+.mer-arrow{color:var(--muted);font-size:13px;}
+.add-btn-dashed{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed var(--bdr);border-radius:10px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);transition:all .15s;margin-bottom:16px;}
+.add-btn-dashed:hover{border-color:var(--sky);color:var(--sky);}
+.set-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border-radius:10px;border:1.5px solid var(--bdr);margin-bottom:6px;}
+.set-row-label{font-size:13px;font-weight:500;flex:1;color:var(--ink);}
+.set-row-sub{font-size:11px;color:var(--muted);}
+
+/* Modals */
+.ov{position:fixed;inset:0;background:rgba(20,35,48,.48);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
+@media(min-width:560px){.ov{align-items:center;padding:20px;}}
+.modal{background:var(--surf);border-radius:20px 20px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom,0px));width:100%;max-width:500px;box-shadow:var(--sh-lg);display:flex;flex-direction:column;gap:12px;max-height:92dvh;overflow-y:auto;}
+@media(min-width:560px){.modal{border-radius:18px;padding:20px;max-height:88dvh;}}
+.mhandle{width:34px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto -4px;}
+@media(min-width:560px){.mhandle{display:none;}}
+.mtitle{font-size:16px;font-weight:600;color:var(--ink);}
+.mrow{display:flex;flex-direction:column;gap:4px;}
+.mlbl{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.4px;text-transform:uppercase;}
+.min{padding:10px 12px;border-radius:9px;border:1.5px solid var(--bdr);background:var(--bg);font-family:'DM Sans',sans-serif;font-size:15px;color:var(--ink);outline:none;width:100%;}
+.min:focus{border-color:var(--sky);}
+select.min{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238AA0B0' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.mgrid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.mgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.mact{display:flex;gap:6px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap;}
+.mbtn-ghost{padding:10px 16px;border-radius:9px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--ink2);}
+.mbtn-del{padding:10px 16px;border-radius:9px;border:none;background:#F0D8D0;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:#8A3A2A;}
+.mbtn-pri{padding:10px 20px;border-radius:9px;border:none;background:var(--sky);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.mbtn-pri:hover{background:var(--ink);}
+.mbtn-pri:active,.mbtn-ghost:active,.mbtn-del:active{transform:scale(.97);}
+.ag{display:flex;flex-wrap:wrap;gap:5px;}
+.ac{padding:6px 10px;border-radius:100px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .13s;color:var(--ink2);}
+.ac.on{background:var(--sky);color:#fff;border-color:var(--sky);}
+.photo-wrap{display:flex;align-items:center;gap:12px;}
+.photo-prev{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--bdr);}
+.photo-input{display:none;}
+.photo-btn{padding:6px 11px;border-radius:8px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;color:var(--ink2);transition:all .15s;}
+.photo-btn:hover{border-color:var(--sky);}
+
+/* Mobile */
+@media(max-width:660px){
+  .hdr{padding:7px 12px;}
+  .pcol{min-width:120px;}
+  .col-hdr{min-width:120px;}
+  .lscroll{padding:5px 12px;}
+  .frow,.ltabs,.labar{padding-left:12px;padding-right:12px;}
+  .pts-scroll,.set-page{padding:12px;}
+}
+`;
+
+// ─── Logo SVG (inline) ────────────────────────────────────────────────────────
+const LogoSVG = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style={{height:26,width:"auto"}}>
+    <defs><style>{`.l0{fill:#8f6a4a}.l1{fill:#333;mix-blend-mode:multiply;opacity:.2}.l2{isolation:isolate}.l3{fill:#8b6b51}`}</style></defs>
+    <g className="l2"><g><g>
+      <path className="l3" d="M84.4,32.2h-2.8v12.7h-4.1v-12.7h-1.8v-3.3h1.8v-.8c0-2,.6-3.4,1.7-4.3,1.1-.9,2.8-1.4,5.1-1.3v3.4c-1,0-1.7.1-2.1.5-.4.3-.6,1-.6,1.9v.7h2.8v3.3Z"/>
+      <path className="l3" d="M86.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9-.9.5-2,.7-3.2.7s-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM97.6,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5c-.6.4-1.2.9-1.5,1.6-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+      <path className="l3" d="M130.6,30.4c1.2,1.2,1.8,2.9,1.8,5v9.4h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-16h4v1.9c.5-.7,1.2-1.2,2-1.6.8-.4,1.7-.6,2.7-.6s2.4.3,3.4.8c1,.5,1.7,1.3,2.3,2.3.5-.9,1.3-1.7,2.3-2.2,1-.6,2.1-.8,3.2-.8,2,0,3.5.6,4.8,1.8Z"/>
+      <path className="l3" d="M136.2,26.3c-.5-.5-.7-1-.7-1.7s.2-1.2.7-1.7c.5-.5,1.1-.7,1.8-.7s1.3.2,1.8.7c.5.5.7,1,.7,1.7s-.2,1.2-.7,1.7c-.5.5-1.1.7-1.8.7s-1.3-.2-1.8-.7ZM140,28.9v16h-4v-16h4Z"/>
+      <path className="l3" d="M147.7,23.5v21.4h-4v-21.4h4Z"/>
+      <path className="l3" d="M166.8,28.9l-9.9,23.6h-4.3l3.5-8-6.4-15.6h4.5l4.1,11.2,4.2-11.2h4.3Z"/>
+      <path className="l3" d="M168,32.5c.7-1.2,1.6-2.2,2.8-2.9s2.6-1,4.1-1,3.6.5,4.9,1.5c1.3,1,2.2,2.4,2.6,4.2h-4.4c-.2-.7-.6-1.2-1.2-1.6-.5-.4-1.2-.6-2-.6-1.2,0-2.1.4-2.7,1.3-.7.8-1,2-1,3.6s.3,2.7,1,3.5c.7.8,1.6,1.3,2.7,1.3,1.6,0,2.7-.7,3.2-2.2h4.4c-.4,1.7-1.3,3.1-2.6,4.1-1.3,1-2.9,1.5-4.9,1.5s-2.9-.3-4.1-1-2.1-1.6-2.8-2.9c-.7-1.2-1-2.7-1-4.3s.3-3.1,1-4.3Z"/>
+      <path className="l3" d="M191.2,29.4c.8-.5,1.8-.7,2.9-.7v4.2h-1.1c-1.3,0-2.2.3-2.9.9-.6.6-1,1.6-1,3.1v8h-4v-16h4v2.5c.5-.8,1.2-1.5,2-2Z"/>
+      <path className="l3" d="M196.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9s-2,.7-3.2.7-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM207.5,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5-1.2.9-1.5,1.6c-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+      <path className="l3" d="M220.6,32.2v7.7c0,.5.1.9.4,1.2.3.2.7.4,1.3.4h1.9v3.4h-2.5c-3.4,0-5.1-1.7-5.1-5v-7.7h-1.9v-3.3h1.9v-4h4.1v4h3.6v3.3h-3.6Z"/>
+      <path className="l3" d="M241.6,38.1h-11.7c0,1.2.5,2.1,1.2,2.7.7.7,1.6,1,2.6,1,1.5,0,2.6-.6,3.2-1.9h4.4c-.5,1.5-1.3,2.8-2.7,3.8-1.3,1-2.9,1.5-4.8,1.5s-2.9-.3-4.1-1c-1.2-.7-2.2-1.7-2.9-2.9-.7-1.3-1-2.7-1-4.3s.3-3.1,1-4.4c.7-1.3,1.6-2.2,2.8-2.9,1.2-.7,2.6-1,4.2-1s2.9.3,4.1,1c1.2.7,2.1,1.6,2.8,2.8.7,1.2,1,2.6,1,4.1s0,1.1-.1,1.6ZM237.5,35.4c0-1-.4-1.9-1.1-2.5-.7-.6-1.6-.9-2.7-.9s-1.8.3-2.5.9-1.1,1.5-1.3,2.5h7.6Z"/>
+    </g><g>
+      <path className="l0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+      <path className="l1" d="M24.8,19.1c.7.7,1.4,1.4,2.1,2.2h4.1c-.8-.7-1.5-1.4-2.3-2.1h-4Z"/>
+      <path className="l1" d="M42.9,19.1v2.1h3.3v-2.1h-3.3Z"/>
+      <path className="l1" d="M29.8,54v-2.2h-3.5v2.2h3.5Z"/>
+      <path className="l1" d="M45.6,54c-.7-.7-1.4-1.4-2.1-2.2h-4.8c.7.7,1.4,1.5,2.1,2.2h4.9Z"/>
+    </g></g></g>
+  </svg>
+);
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function Avatar({ member, size = 24 }) {
+  if (member.photo) return <img src={member.photo} alt={member.name} style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",flexShrink:0}}/>;
+  return <div style={{width:size,height:size,borderRadius:"50%",background:member.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*.38,fontWeight:600,color:"#fff",flexShrink:0}}>{member.name.slice(0,2).toUpperCase()}</div>;
+}
+
+function ModalWrap({ children, onClose }) {
+  return <div className="ov" onMouseDown={e=>e.target===e.currentTarget&&onClose()}>{children}</div>;
+}
+
+// ─── Item Modal ───────────────────────────────────────────────────────────────
+function ItemModal({ item, members, prefill, onSave, onDelete, onClose }) {
+  const [text, setText]   = useState(item?.text ?? "");
+  const [pts, setPts]     = useState(String(item?.points ?? 5));
+  const [cat, setCat]     = useState(item?.category ?? "chores");
+  const [who, setWho]     = useState(item?.assignedTo ?? prefill?.assignedTo ?? []);
+  const [rep, setRep]     = useState(item?.repeat ?? "none");
+  const [sd, setSd]       = useState(item?.startDate ?? item?.date ?? TODAY);
+  const [startTime, setStartTime] = useState(item?.time ?? "");
+  const [endTime, setEndTime]     = useState(() => {
+    if (!item?.time || !item?.duration) return "";
+    const sm = timeToMinutes(item.time); if (sm < 0) return "";
+    return minutesToTime12(sm + (item.duration || 30));
+  });
+  const [note, setNote]   = useState(item?.note ?? "");
+  const toggleWho = id => setWho(p => p.includes(id)?p.filter(x=>x!==id):[...p,id]);
+  const calcDuration = () => {
+    const sm = timeToMinutes(startTime), em = timeToMinutes(endTime);
+    if (sm < 0 || em < 0 || em <= sm) return 30;
+    return em - sm;
+  };
+  const save = () => {
+    if (!text.trim()) return;
+    const dur = calcDuration();
+    const base = { text:text.trim(), points:Math.max(0,parseInt(pts)||0), category:cat, assignedTo:who, repeat:rep, time:startTime, duration:dur, note:note.trim()||undefined };
+    onSave(rep==="none"?{...base,date:sd}:{...base,startDate:sd});
+  };
+  return (
+    <ModalWrap onClose={onClose}>
+      <div className="modal">
+        <div className="mhandle"/>
+        <div className="mtitle">{item?"Edit item":"Add item"}</div>
+        <div className="mrow"><div className="mlbl">Description</div>
+          <input className="min" value={text} onChange={e=>setText(e.target.value)} placeholder="What needs doing?" autoFocus onKeyDown={e=>e.key==="Enter"&&save()}/></div>
+        <div className="mgrid2">
+          <div className="mrow"><div className="mlbl">Points</div><input className="min" type="number" min="0" value={pts} onChange={e=>setPts(e.target.value)}/></div>
+          <div className="mrow"><div className="mlbl">Category</div>
+            <select className="min" value={cat} onChange={e=>setCat(e.target.value)}>
+              <option value="chores">Chores</option><option value="groceries">Groceries</option><option value="todos">To-Dos</option>
+            </select></div>
+        </div>
+        <div className="mgrid3">
+          <div className="mrow"><div className="mlbl">Start time</div>
+            <select className="min" value={startTime} onChange={e=>setStartTime(e.target.value)}>
+              <option value="">No time</option>
+              {TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}
+            </select></div>
+          <div className="mrow"><div className="mlbl">End time</div>
+            <select className="min" value={endTime} onChange={e=>setEndTime(e.target.value)}>
+              <option value="">—</option>
+              {TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}
+            </select></div>
+          <div className="mrow"><div className="mlbl">Repeat</div>
+            <select className="min" value={rep} onChange={e=>setRep(e.target.value)}>
+              <option value="none">Once</option><option value="daily">Daily</option><option value="weekly-dow">Weekly</option><option value="monthly">Monthly</option>
+            </select></div>
+        </div>
+        <div className="mrow"><div className="mlbl">{rep==="none"?"Date":"Starts"}</div>
+          <input className="min" type="date" value={sd} onChange={e=>setSd(e.target.value)}/></div>
+        <div className="mrow"><div className="mlbl">Assign to</div>
+          <div className="ag">
+            <button className={`ac ${who.length===0?"on":""}`} onClick={()=>setWho([])}>Anyone</button>
+            {members.map(m=><button key={m.id} className={`ac ${who.includes(m.id)?"on":""}`} onClick={()=>toggleWho(m.id)}><Avatar member={m} size={14}/>{m.name}</button>)}
+          </div></div>
+        <div className="mrow"><div className="mlbl">Note</div><input className="min" value={note} onChange={e=>setNote(e.target.value)} placeholder="Optional note…"/></div>
+        <div className="mact">
+          {item&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}
+          <button className="mbtn-ghost" onClick={onClose}>Cancel</button>
+          <button className="mbtn-pri" onClick={save}>Save</button>
+        </div>
+      </div>
+    </ModalWrap>
+  );
+}
+
+// ─── Event Modal ──────────────────────────────────────────────────────────────
+function EventModal({ event, members, onSave, onDelete, onClose }) {
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [date, setDate]   = useState(event?.date ?? TODAY);
+  const [sd, setSd]       = useState(event?.startDate ?? event?.date ?? TODAY);
+  const [startTime, setStartTime] = useState(event?.time ?? "");
+  const [endTime, setEndTime] = useState(() => {
+    if (!event?.time || !event?.duration) return "";
+    const sm = timeToMinutes(event.time); if (sm < 0) return "";
+    return minutesToTime12(sm + (event.duration || 60));
+  });
+  const [who, setWho]   = useState(event?.memberIds ?? []);
+  const [rep, setRep]   = useState(event?.repeat ?? "none");
+  const [type, setType] = useState(event?.type ?? "family");
+  const toggleWho = id => setWho(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
+  const colorMap = { school:SCHOOL_COLOR, activity:CKY_COLOR, family:SHARED_COLOR, chore:"#7A7A7A" };
+  const calcDuration = () => {
+    const sm = timeToMinutes(startTime), em = timeToMinutes(endTime);
+    if (sm < 0 || em < 0 || em <= sm) return 60;
+    return em - sm;
+  };
+  const save = () => {
+    if (!title.trim()) return;
+    const dur = calcDuration();
+    const base = { title:title.trim(), time:startTime, duration:dur, memberIds:who, repeat:rep, type, color:colorMap[type]??SHARED_COLOR };
+    onSave(rep==="none"?{...base,date}:{...base,startDate:sd,date:sd});
+  };
+  return (
+    <ModalWrap onClose={onClose}>
+      <div className="modal">
+        <div className="mhandle"/>
+        <div className="mtitle">{event?"Edit event":"Add event"}</div>
+        <div className="mrow"><div className="mlbl">Title</div>
+          <input className="min" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event name" autoFocus onKeyDown={e=>e.key==="Enter"&&save()}/></div>
+        <div className="mrow"><div className="mlbl">{rep==="none"?"Date":"Starts"}</div>
+          <input className="min" type="date" value={rep==="none"?date:sd} onChange={e=>rep==="none"?setDate(e.target.value):setSd(e.target.value)}/></div>
+        <div className="mgrid3">
+          <div className="mrow"><div className="mlbl">Start time</div>
+            <select className="min" value={startTime} onChange={e=>setStartTime(e.target.value)}>
+              <option value="">No time</option>
+              {TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}
+            </select></div>
+          <div className="mrow"><div className="mlbl">End time</div>
+            <select className="min" value={endTime} onChange={e=>setEndTime(e.target.value)}>
+              <option value="">—</option>
+              {TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}
+            </select></div>
+          <div className="mrow"><div className="mlbl">Repeat</div>
+            <select className="min" value={rep} onChange={e=>setRep(e.target.value)}>
+              <option value="none">Once</option><option value="daily">Daily</option><option value="weekly-dow">Weekly</option><option value="monthly">Monthly</option>
+            </select></div>
+        </div>
+        <div className="mgrid2">
+          <div className="mrow"><div className="mlbl">Type</div>
+            <select className="min" value={type} onChange={e=>setType(e.target.value)}>
+              <option value="family">Family</option><option value="school">School</option><option value="activity">Activity</option>
+            </select></div>
+        </div>
+        <div className="mrow"><div className="mlbl">Who's involved</div>
+          <div className="ag">
+            <button className={`ac ${who.length===0?"on":""}`} onClick={()=>setWho([])}>Everyone</button>
+            {members.map(m=><button key={m.id} className={`ac ${who.includes(m.id)?"on":""}`} onClick={()=>toggleWho(m.id)}><Avatar member={m} size={14}/>{m.name}</button>)}
+          </div></div>
+        <div className="mact">
+          {event&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}
+          <button className="mbtn-ghost" onClick={onClose}>Cancel</button>
+          <button className="mbtn-pri" onClick={save}>Save</button>
+        </div>
+      </div>
+    </ModalWrap>
+  );
+}
+
+// ─── Member Modal ─────────────────────────────────────────────────────────────
+function MemberModal({ member, onSave, onDelete, onClose }) {
+  const [name, setName]   = useState(member?.name ?? "");
+  const [color, setColor] = useState(member?.color ?? "#5A7A9A");
+  const [photo, setPhoto] = useState(member?.photo ?? null);
+  const [email, setEmail] = useState(member?.email ?? "");
+  const fileRef = useRef();
+  const COLORS = ["#8A6A50","#A87070","#4A8B8B","#5A7A9A","#6A8C6E","#8A6A9A","#5A7A8A","#9A8060","#5A9A8A","#8A7060"];
+  const handlePhoto = e => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>setPhoto(ev.target.result); r.readAsDataURL(f); };
+  const save = () => { if (!name.trim()) return; onSave({name:name.trim(),color,photo,email,phone:""}); };
+  return (
+    <ModalWrap onClose={onClose}>
+      <div className="modal">
+        <div className="mhandle"/>
+        <div className="mtitle">{member?"Edit member":"Add member"}</div>
+        <div className="mrow"><div className="mlbl">Photo</div>
+          <div className="photo-wrap">
+            {photo?<img src={photo} alt="" className="photo-prev"/>:<div style={{width:56,height:56,borderRadius:"50%",background:color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:600,color:"#fff"}}>{name.slice(0,2).toUpperCase()||"?"}</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+              <button className="photo-btn" onClick={()=>fileRef.current.click()}>Upload photo</button>
+              {photo&&<button className="photo-btn" onClick={()=>setPhoto(null)}>Remove</button>}
+              <input ref={fileRef} type="file" accept="image/*" className="photo-input" onChange={handlePhoto}/>
+            </div>
+          </div></div>
+        <div className="mrow"><div className="mlbl">Name</div><input className="min" value={name} onChange={e=>setName(e.target.value)} placeholder="Name" autoFocus/></div>
+        <div className="mrow"><div className="mlbl">Color</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {COLORS.map(c=><div key={c} onClick={()=>setColor(c)} style={{width:26,height:26,borderRadius:"50%",background:c,cursor:"pointer",border:`3px solid ${color===c?"var(--ink)":"transparent"}`,transition:"border .15s"}}/>)}
+          </div></div>
+        <div className="mrow"><div className="mlbl">Email (for notifications)</div><input className="min" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@example.com"/></div>
+        <div className="mact">
+          {member&&<button className="mbtn-del" onClick={onDelete}>Remove</button>}
+          <button className="mbtn-ghost" onClick={onClose}>Cancel</button>
+          <button className="mbtn-pri" onClick={save}>Save</button>
+        </div>
+      </div>
+    </ModalWrap>
+  );
+}
+
+function RewardModal({ reward, onSave, onDelete, onClose }) {
+  const [title,setTitle]=useState(reward?.title??""); const [pts,setPts]=useState(String(reward?.points??10)); const [icon,setIcon]=useState(reward?.icon??"🎁");
+  const ICONS=["🎁","📱","🍕","🌙","🎬","✨","💵","🎮","🏖️","🎡","🍦","🎪","📚","🎨","🎯"];
+  const save=()=>{if(!title.trim())return;onSave({title:title.trim(),points:Math.max(1,parseInt(pts)||1),icon});};
+  return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{reward?"Edit reward":"Add reward"}</div>
+    <div className="mrow"><div className="mlbl">Title</div><input className="min" value={title} onChange={e=>setTitle(e.target.value)} placeholder="e.g. 30 min extra screen time" autoFocus/></div>
+    <div className="mrow"><div className="mlbl">Points cost</div><input className="min" type="number" min="1" value={pts} onChange={e=>setPts(e.target.value)} style={{width:90}}/></div>
+    <div className="mrow"><div className="mlbl">Icon</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{ICONS.map(ic=><button key={ic} onClick={()=>setIcon(ic)} style={{width:34,height:34,fontSize:17,border:`1.5px solid ${icon===ic?"var(--sky)":"var(--bdr)"}`,borderRadius:8,background:icon===ic?"var(--sky-lt)":"none",cursor:"pointer"}}>{ic}</button>)}</div></div>
+    <div className="mact">{reward&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" onClick={save}>Save</button></div>
+  </div></ModalWrap>);
+}
+function RedeemModal({ reward, members, onSubmit, onClose }) {
+  const [who,setWho]=useState(null);
+  return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">Redeem: {reward.icon} {reward.title}</div>
+    <div style={{fontSize:13,color:"var(--muted)"}}>Costs {reward.points} pts. Who is redeeming?</div>
+    <div className="ag">{members.map(m=><button key={m.id} className={`ac ${who===m.id?"on":""}`} onClick={()=>setWho(m.id)}><Avatar member={m} size={14}/>{m.name}</button>)}</div>
+    <div className="mact"><button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" disabled={!who} onClick={()=>who&&onSubmit(who)} style={{opacity:who?1:.5}}>Request</button></div>
+  </div></ModalWrap>);
+}
+function ConfirmModal({ title, message, onConfirm, onClose }) {
+  return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{title}</div>
+    <div style={{fontSize:13,color:"var(--ink2)",lineHeight:1.5}}>{message}</div>
+    <div className="mact"><button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-del" onClick={onConfirm}>Confirm</button></div>
+  </div></ModalWrap>);
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const Icons = {
+  home: <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  list: <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+  star: <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  gear: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  cal:  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+};
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function FamilyCrate() {
+  // Inject favicon
+  useEffect(() => {
+    const existing = document.querySelector("link[rel='icon']");
+    if (existing) existing.remove();
+    const link = document.createElement("link");
+    link.rel = "icon"; link.type = "image/svg+xml";
+    link.href = `data:image/svg+xml,${encodeURIComponent(FAVICON_SVG)}`;
+    document.head.appendChild(link);
+    document.title = "FamilyCrate";
+  }, []);
+
+  function load(k, fb) { try { const v=localStorage.getItem(k); return v?JSON.parse(v):fb; } catch { return fb; } }
+  function save(k, v) { try { localStorage.setItem(k,JSON.stringify(v)); } catch {} }
+
+  const [members,setMR]     = useState(()=>load("fc_members",INIT_MEMBERS));
+  const [items,setIR]       = useState(()=>load("fc_items",INIT_ITEMS));
+  const [events,setER]      = useState(()=>load("fc_events",INIT_EVENTS));
+  const [rewards,setRwR]    = useState(()=>load("fc_rewards",INIT_REWARDS));
+  const [doneLog,setDLR]    = useState(()=>load("fc_donelog",{}));
+  const [redeemReqs,setRRR] = useState(()=>load("fc_reqs",[]));
+  const [rate,setRateR]     = useState(()=>load("fc_rate",0.25));
+  const [periodStart,setPSR]= useState(()=>load("fc_ps",PERIOD_START));
+
+  const setMembers = v=>{const n=typeof v==="function"?v(members):v;save("fc_members",n);setMR(n);};
+  const setItems   = v=>{const n=typeof v==="function"?v(items):v;  save("fc_items",n);  setIR(n);};
+  const setEvents  = v=>{const n=typeof v==="function"?v(events):v; save("fc_events",n); setER(n);};
+  const setRewards = v=>{const n=typeof v==="function"?v(rewards):v;save("fc_rewards",n);setRwR(n);};
+  const setDoneLog = v=>{const n=typeof v==="function"?v(doneLog):v;save("fc_donelog",n);setDLR(n);};
+  const setRedeemReqs=v=>{const n=typeof v==="function"?v(redeemReqs):v;save("fc_reqs",n);setRRR(n);};
+  const setRate    = v=>{const n=typeof v==="function"?v(rate):v;   save("fc_rate",n);   setRateR(n);};
+  const setPeriodStart=v=>{const n=typeof v==="function"?v(periodStart):v;save("fc_ps",n);setPSR(n);};
+
+  const [view,setView]       = useState("home");
+  const [dayView,setDayView] = useState("day"); // "day" | "week"
+  const [ptsTab,setPtsTab]   = useState("lb");
+  const [selDate,setSelDate] = useState(TODAY);
+  const [calMo,setCalMo]     = useState(new Date(TODAY+"T12:00:00").setDate(1));
+  // Filter: null = all, else = show ONLY that member id
+  const [filterMid,setFilterMid] = useState(null);
+  const [calOpen,setCalOpen] = useState(false);
+  const [listTab,setListTab] = useState("chores");
+  const [listFmid,setListFmid]= useState(null);
+  const [iModal,setIModal]   = useState(null);
+  const [eModal,setEModal]   = useState(null);
+  const [mModal,setMModal]   = useState(null);
+  const [rwModal,setRwModal] = useState(null);
+  const [rdModal,setRdModal] = useState(null);
+  const [confirmModal,setConfirmModal] = useState(null);
+  const [aText,setAText]     = useState("");
+  const [aPts,setAPts]       = useState("5");
+  const [nowMins,setNowMins] = useState(()=>{ const n=new Date(); return n.getHours()*60+n.getMinutes(); });
+  // Drag state
+  const [dragging,setDragging] = useState(null); // { blockId, itemId, startY, origTop, memberId }
+  const gridScrollRef = useRef(null);
+  const dragRef       = useRef(null);
+
+  useEffect(()=>{
+    const tick=()=>{ const n=new Date(); setNowMins(n.getHours()*60+n.getMinutes()); };
+    const id=setInterval(tick,60000); return ()=>clearInterval(id);
+  },[]);
+
+  useEffect(()=>{
+    if (!gridScrollRef.current) return;
+    const top = minutesToTop(Math.max(nowMins-60, DAY_START)) - 20;
+    gridScrollRef.current.scrollTop = Math.max(0,top);
+  },[selDate, dayView]);
+
+  // Calendar
+  const calDate=new Date(calMo); const yr=calDate.getFullYear(),mo=calDate.getMonth();
+  const fd=new Date(yr,mo,1).getDay(),dim=new Date(yr,mo+1,0).getDate(),pmd=new Date(yr,mo,0).getDate();
+  const cells=[]; for(let i=fd-1;i>=0;i--) cells.push({d:pmd-i,cur:false}); for(let d=1;d<=dim;d++) cells.push({d,cur:true}); while(cells.length%7!==0) cells.push({d:cells.length-dim-fd+1,cur:false});
+  const toCellDate=c=>c.cur?`${yr}-${String(mo+1).padStart(2,"0")}-${String(c.d).padStart(2,"0")}`:null;
+
+  const eventsOnDate = useCallback(ds=>{
+    const seen=new Set();
+    return events.filter(ev=>{ if(!eventAppearsOn(ev,ds)) return false; if(seen.has(ev.id)) return false; seen.add(ev.id); return true; });
+  },[events]);
+
+  const itemsForMemberOnDate = useCallback((mid,ds)=>
+    items.filter(it=>(it.assignedTo.length===0||it.assignedTo.includes(mid))&&appearsOnDate(it,ds))
+  ,[items]);
+
+  const isDone=(itemId,memberId,ds)=>!!doneLog[doneKey(itemId,memberId,ds)];
+  const toggleDone=(itemId,memberId,ds)=>{ const k=doneKey(itemId,memberId,ds); setDoneLog(p=>({...p,[k]:!p[k]})); };
+
+  const earnedInPeriod=mid=>{
+    let total=0;
+    Object.entries(doneLog).forEach(([k,done])=>{
+      if(!done) return; const parts=k.split("__"); if(parts.length<3) return;
+      const[idStr,midStr,ds]=parts; if(String(mid)!==midStr||ds<periodStart||ds>TODAY) return;
+      const item=items.find(i=>String(i.id)===idStr); if(item&&item.points>0) total+=item.points;
+    }); return total;
+  };
+  const dFmt=n=>n%1===0?`$${n}`:`$${n.toFixed(2)}`;
+
+  const saveMember=(id,p)=>id?setMembers(m=>m.map(v=>v.id===id?{...v,...p}:v)):setMembers(m=>[...m,{id:uid(),color:"#5A7A9A",photo:null,email:"",phone:"",...p}]);
+  const delMember =id=>{ setMembers(m=>m.filter(v=>v.id!==id)); setItems(i=>i.map(v=>({...v,assignedTo:v.assignedTo.filter(x=>x!==id)}))); if(filterMid===id) setFilterMid(null); };
+  const saveItem=(id,p)=>id?setItems(i=>i.map(v=>v.id===id?{...v,...p}:v)):setItems(i=>[...i,{id:uid(),...p}]);
+  const delItem  =id=>setItems(i=>i.filter(v=>v.id!==id));
+  const addQuick =()=>{ if(!aText.trim()) return; setItems(i=>[...i,{id:uid(),text:aText.trim(),points:Math.max(0,parseInt(aPts)||0),category:listTab,assignedTo:[],repeat:"none",date:TODAY,time:"",duration:30}]); setAText("");setAPts("5"); };
+  const saveEvent=(id,p)=>id?setEvents(e=>e.map(v=>v.id===id?{...v,...p}:v)):setEvents(e=>[...e,{id:uid(),...p}]);
+  const delEvent =id=>setEvents(e=>e.filter(v=>v.id!==id));
+  const saveReward=(id,p)=>id?setRewards(r=>r.map(v=>v.id===id?{...v,...p}:v)):setRewards(r=>[...r,{id:uid(),...p}]);
+  const delReward=id=>setRewards(r=>r.filter(v=>v.id!==id));
+  const submitRedeem=(rId,mId)=>{ const r=rewards.find(x=>x.id===rId); if(!r) return; setRedeemReqs(p=>[...p,{id:uid(),rewardId:rId,memberId:mId,status:"pending",ts:Date.now()}]); };
+  const approveReq=id=>setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"approved"}:r));
+  const declineReq=id=>setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r));
+  const resetPeriod=()=>{ const ns=addDays(TODAY,-14),cleaned={}; Object.entries(doneLog).forEach(([k,v])=>{ const ds=k.split("__")[2]; if(ds>=ns) cleaned[k]=v; }); setDoneLog(cleaned);setPeriodStart(ns);setConfirmModal(null); };
+
+  // Week dates
+  const weekStart = startOfWeek(selDate);
+  const weekDates = Array.from({length:7},(_,i)=>addDays(weekStart,i));
+
+  // Visible members (filtered)
+  const visibleMembers = filterMid ? members.filter(m=>m.id===filterMid) : members;
+
+  const upcomingEvs=(()=>{ const res=[]; for(let i=0;i<21;i++){ const ds=addDays(TODAY,i); eventsOnDate(ds).forEach(ev=>res.push({...ev,_date:ds})); } return res.slice(0,12); })();
+
+  // Build timed blocks for a member on a date
+  function buildBlocks(mid, ds) {
+    const colEvs = eventsOnDate(ds).filter(ev=>ev.memberIds.includes(mid)||ev.memberIds.length===0);
+    const colItems = itemsForMemberOnDate(mid, ds);
+    const blocks = [];
+    colEvs.forEach(ev=>{
+      const sm=timeToMinutes(ev.time); const dur=ev.duration||60;
+      if(sm<DAY_START||sm>=DAY_END) return;
+      blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR,type:ev.type});
+    });
+    colItems.forEach(item=>{
+      if(!item.time) return;
+      const sm=timeToMinutes(item.time); const dur=item.duration||30;
+      if(sm<DAY_START||sm>=DAY_END) return;
+      blocks.push({id:`it-${item.id}`,itemId:item.id,kind:"item",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:item.text,time:item.time,note:item.note,points:item.points,color:members.find(m=>m.id===mid)?.color||"#8A8A8A",done:isDone(item.id,mid,ds),memberId:mid});
+    });
+    return layoutBlocks(blocks);
+  }
+
+  const totalGridHeight=(DAY_END-DAY_START)*MIN_PX;
+  const hours=[]; for(let h=DAY_START;h<=DAY_END;h+=60) hours.push(h);
+
+  // Drag handlers
+  const onMouseDown=(e,block,mid,ds)=>{
+    if(block.kind!=="item") return;
+    e.preventDefault();
+    dragRef.current={blockId:block.id,itemId:block.itemId,memberId:mid,date:ds,startY:e.clientY,origTop:block.top,origMins:block.startMins};
+    setDragging({blockId:block.id,top:block.top,height:block.height,color:block.color,title:block.title});
+  };
+  useEffect(()=>{
+    const onMove=e=>{ if(!dragRef.current||!dragging) return; const dy=e.clientY-dragRef.current.startY; const newTop=dragRef.current.origTop+dy; setDragging(d=>d?{...d,top:newTop}:null); };
+    const onUp=e=>{
+      if(!dragRef.current||!dragging) return;
+      const dy=e.clientY-dragRef.current.startY;
+      const newTop=dragRef.current.origTop+dy;
+      const newMins=Math.round((newTop/MIN_PX+DAY_START)/15)*15;
+      const clampedMins=Math.max(DAY_START,Math.min(DAY_END-30,newMins));
+      const newTime=minutesToTime12(clampedMins);
+      saveItem(dragRef.current.itemId,{time:newTime});
+      dragRef.current=null; setDragging(null);
+    };
+    window.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
+    return ()=>{ window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
+  },[dragging]);
+
+  const lbData=[...members].map(m=>({...m,pts:earnedInPeriod(m.id)})).sort((a,b)=>b.pts-a.pts);
+  const maxPts=Math.max(...lbData.map(m=>m.pts),1);
+  const pendingReqs=redeemReqs.filter(r=>r.status==="pending");
+  const listItems=items.filter(it=>{ if(it.category!==listTab) return false; if(listFmid!==null&&!it.assignedTo.includes(listFmid)&&it.assignedTo.length>0) return false; return true; });
+  const dayLabel=selDate===TODAY?"Today":isoToDisplay(selDate);
+
+  // Render a single person column for a given date
+  const renderCol=(m, ds)=>{
+    const blocks=buildBlocks(m.id,ds);
+    return (
+      <div key={`${m.id}-${ds}`} className="pcol" style={{height:totalGridHeight,position:"relative"}}>
+        {blocks.map(block=>{
+          const colW=1/block.totalCols, leftPct=block.col*colW*100, widthPct=colW*100-1;
+          const isDraggingThis=dragging?.blockId===block.id;
+          const bg=`${block.color}30`, border=block.color;
+          return (
+            <div key={block.id} className="tblock"
+              style={{top:block.top,height:block.height,left:`calc(${leftPct}%+2px)`,width:`calc(${widthPct}%-4px)`,background:bg,borderLeft:`3px solid ${border}`,zIndex:block.col+1,opacity:isDraggingThis?.5:1,cursor:block.kind==="item"?"grab":"pointer"}}
+              onMouseDown={block.kind==="item"?e=>onMouseDown(e,block,m.id,ds):undefined}
+              onClick={()=>{ if(block.kind==="event") setEModal({event:events.find(e=>e.id===block.evId)}); else setIModal({item:items.find(i=>i.id===block.itemId)}); }}>
+              <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?18:0}}>{block.title}</div>
+              {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
+              {block.note&&block.height>44&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
+              {block.kind==="item"&&(
+                <button className={`tblock-chk ${block.done?"on":""}`}
+                  style={{background:block.done?`${block.color}88`:"none",borderColor:block.done?block.color:`${block.color}88`}}
+                  onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>
+                  {block.done?"✓":""}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <style>{CSS}</style>
+      <div className="app">
+
+        {/* Header */}
+        <header className="hdr">
+          <div className="hdr-logo"><LogoSVG/></div>
+          <div className="hdr-members">
+            {members.map(m=>{
+              const pts=earnedInPeriod(m.id);
+              const isActive=filterMid===m.id;
+              return (
+                <button key={m.id} className={`mchip ${isActive?"active":""}`}
+                  onClick={()=>setFilterMid(p=>p===m.id?null:m.id)}>
+                  <Avatar member={m} size={20}/>
+                  <span className="mchip-name">{m.name}</span>
+                  {pts>0&&<span className="mchip-pts">{pts}pt{pts!==1?"s":""}</span>}
+                </button>
+              );
+            })}
+          </div>
+          <button className="hdr-gear" onClick={()=>setView("settings")}>{Icons.gear}</button>
+        </header>
+
+        {/* HOME */}
+        {view==="home"&&(
+          <div className="page">
+            {calOpen&&<div className="cal-overlay" onClick={()=>setCalOpen(false)}/>}
+            <div className={`cal-drawer ${calOpen?"open":""}`}>
+              <div className="cal-inner">
+                <div className="cal-nav-row">
+                  <div className="cal-mname">{MONTHS_SHORT[mo]} {yr}</div>
+                  <div className="cal-navs">
+                    <button className="ibtn" onClick={()=>setCalMo(new Date(yr,mo-1,1).getTime())}>‹</button>
+                    <button className="ibtn" onClick={()=>setCalMo(new Date(yr,mo+1,1).getTime())}>›</button>
+                  </div>
+                </div>
+                <div className="cgrid">
+                  {DAYS_SHORT.map(d=><div key={d} className="cdl">{d}</div>)}
+                  {cells.map((cell,i)=>{
+                    const ds=toCellDate(cell), isT=ds===TODAY, isS=ds===selDate&&!isT, hasDot=ds&&eventsOnDate(ds).length>0;
+                    return <div key={i} className={`cc${!cell.cur?" other":""}${isT?" today":""}${isS?" sel":""}${hasDot?" hasdot":""}`}
+                      onClick={()=>{ if(ds){setSelDate(ds);if(dayView==="week"){}setCalOpen(false);} }}>{cell.d}</div>;
+                  })}
+                </div>
+                <div className="up-lbl">Upcoming</div>
+                {upcomingEvs.map((ev,i)=>(
+                  <div key={i} className="uev" onClick={()=>{setEModal({event:ev});setCalOpen(false);}}>
+                    <div className="uev-dot" style={{background:ev.color??SHARED_COLOR}}/>
+                    <div className="uev-body">
+                      <div className="uev-title">{ev.title}</div>
+                      <div className="uev-when">{ev._date===TODAY?"Today":isoToDisplay(ev._date)} · {ev.time}</div>
+                    </div>
+                  </div>
+                ))}
+                <button className="add-ev-btn" onClick={()=>{setEModal({event:null});setCalOpen(false);}}>+ Add event</button>
+              </div>
+            </div>
+
+            <div className="day-view">
+              {/* Day/Week header */}
+              <div className="day-hdr">
+                <button className="cal-toggle" onClick={()=>setCalOpen(p=>!p)}>{Icons.cal}</button>
+                <div className="day-nav-btns">
+                  <button className="ibtn" onClick={()=>setSelDate(dayView==="day"?addDays(selDate,-1):addDays(selDate,-7))}>‹</button>
+                  <button className="ibtn" onClick={()=>setSelDate(dayView==="day"?addDays(selDate,1):addDays(selDate,7))}>›</button>
+                </div>
+                <div className="day-title">{dayView==="week"?`Week of ${isoToDisplay(weekStart,{month:"short",day:"numeric"})}`:dayLabel}</div>
+                {selDate!==TODAY&&<button className="day-pill" onClick={()=>setSelDate(TODAY)}>Today</button>}
+                <div className="view-toggle">
+                  <button className={`vt-btn ${dayView==="day"?"on":""}`} onClick={()=>setDayView("day")}>Day</button>
+                  <button className={`vt-btn ${dayView==="week"?"on":""}`} onClick={()=>setDayView("week")}>Week</button>
+                </div>
+                <button className="day-pill" onClick={()=>setEModal({event:null})}>+ Event</button>
+                <button className="day-pill" onClick={()=>setIModal({item:null,prefill:{}})}>+ Task</button>
+              </div>
+
+              {/* DAY VIEW */}
+              {dayView==="day"&&(
+                <>
+                  <div className="col-hdrs">
+                    <div className="gutter-hdr"/>
+                    {visibleMembers.map(m=>{
+                      const pts=earnedInPeriod(m.id);
+                      return (
+                        <div key={m.id} className="col-hdr">
+                          <Avatar member={m} size={22}/>
+                          <span className="col-hdr-name">{m.name}</span>
+                          {pts>0&&<span className="col-hdr-pts">{pts}pt{pts!==1?"s":""}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="grid-scroll" ref={gridScrollRef}>
+                    <div className="grid-body" style={{height:totalGridHeight}}>
+                      <div className="time-gutter" style={{height:totalGridHeight}}>
+                        {hours.map(h=><div key={h} className="time-lbl" style={{top:minutesToTop(h)}}>{minutesToTime12(h)}</div>)}
+                      </div>
+                      <div style={{position:"absolute",left:48,right:0,top:0,height:totalGridHeight,pointerEvents:"none",zIndex:0}}>
+                        {hours.map(h=><div key={h} className="hline" style={{top:minutesToTop(h)}}/>)}
+                      </div>
+                      {selDate===TODAY&&nowMins>=DAY_START&&nowMins<=DAY_END&&(
+                        <div className="now-line" style={{top:minutesToTop(nowMins),left:48,right:0,position:"absolute"}}/>
+                      )}
+                      <div style={{position:"absolute",left:48,right:0,top:0,height:totalGridHeight,display:"flex"}}>
+                        {visibleMembers.map(m=>renderCol(m,selDate))}
+                      </div>
+                    </div>
+                    {dragging&&(
+                      <div className="drag-ghost" style={{top:dragging.top,height:dragging.height,left:48,width:120,background:`${dragging.color}55`,borderColor:dragging.color}}>
+                        <div style={{fontSize:11,fontWeight:500,color:dragging.color,padding:"4px 6px"}}>{dragging.title}</div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* WEEK VIEW */}
+              {dayView==="week"&&(
+                <>
+                  <div className="col-hdrs" style={{overflowX:"auto",scrollbarWidth:"none"}}>
+                    <div className="gutter-hdr"/>
+                    {weekDates.map(ds=>{
+                      const d=new Date(ds+"T12:00:00");
+                      const isT=ds===TODAY;
+                      return (
+                        <div key={ds} className="col-hdr" style={{flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",minWidth:visibleMembers.length>1?`${100/weekDates.length}%`:"130px"}} onClick={()=>{setSelDate(ds);setDayView("day");}}>
+                          <div className="wdh-day">{DAYS_SHORT[d.getDay()]}</div>
+                          <div className={`wdh-date ${isT?"today-date":""}`}>{d.getDate()}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="grid-scroll" ref={gridScrollRef}>
+                    <div className="grid-body" style={{height:totalGridHeight}}>
+                      <div className="time-gutter" style={{height:totalGridHeight}}>
+                        {hours.map(h=><div key={h} className="time-lbl" style={{top:minutesToTop(h)}}>{minutesToTime12(h)}</div>)}
+                      </div>
+                      <div style={{position:"absolute",left:48,right:0,top:0,height:totalGridHeight,pointerEvents:"none",zIndex:0}}>
+                        {hours.map(h=><div key={h} className="hline" style={{top:minutesToTop(h)}}/>)}
+                      </div>
+                      {nowMins>=DAY_START&&nowMins<=DAY_END&&(()=>{
+                        const todayIdx=weekDates.indexOf(TODAY);
+                        if(todayIdx<0) return null;
+                        const colW=`calc((100% - 0px) / ${weekDates.length})`;
+                        return <div className="now-line" style={{top:minutesToTop(nowMins),position:"absolute",left:`calc(48px + ${todayIdx} * ${colW})`,width:colW}}/>;
+                      })()}
+                      <div style={{position:"absolute",left:48,right:0,top:0,height:totalGridHeight,display:"flex"}}>
+                        {weekDates.map(ds=>{
+                          // Week view: show all visible members merged into one column per day
+                          // For simplicity, show first visible member only OR family view
+                          const evs=eventsOnDate(ds).filter(ev=>filterMid?ev.memberIds.includes(filterMid)||ev.memberIds.length===0:true);
+                          const its=filterMid?itemsForMemberOnDate(filterMid,ds):items.filter(it=>appearsOnDate(it,ds)&&it.time);
+                          const seen=new Set();
+                          const blocks2=[];
+                          evs.forEach(ev=>{ const sm=timeToMinutes(ev.time); if(sm<DAY_START||sm>=DAY_END) return; blocks2.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(ev.duration||60),startMins:sm,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR}); });
+                          its.forEach(item=>{ if(seen.has(item.id)) return; seen.add(item.id); const sm=timeToMinutes(item.time); if(sm<DAY_START||sm>=DAY_END) return; const mid2=filterMid??(item.assignedTo[0]??1); const mc=members.find(m=>m.id===mid2)?.color||"#8A8A8A"; blocks2.push({id:`it-${item.id}`,itemId:item.id,kind:"item",top:minutesToTop(sm),height:durationToPx(item.duration||30),startMins:sm,title:item.text,time:item.time,color:mc,done:filterMid?isDone(item.id,filterMid,ds):false,memberId:filterMid??mid2}); });
+                          const laid=layoutBlocks(blocks2);
+                          return (
+                            <div key={ds} className="pcol" style={{height:totalGridHeight,position:"relative",borderRight:"1px solid var(--bdr)",flex:1,minWidth:0,cursor:"pointer"}} onClick={e=>{ if(e.target===e.currentTarget){setSelDate(ds);setDayView("day");} }}>
+                              {laid.map(block=>{
+                                const colW2=1/block.totalCols,leftPct=block.col*colW2*100,widthPct=colW2*100-1;
+                                return (
+                                  <div key={block.id} className="tblock"
+                                    style={{top:block.top,height:block.height,left:`calc(${leftPct}%+1px)`,width:`calc(${widthPct}%-2px)`,background:`${block.color}30`,borderLeft:`2px solid ${block.color}`,zIndex:block.col+1}}
+                                    onClick={e=>{e.stopPropagation(); if(block.kind==="event") setEModal({event:events.find(ev=>ev.id===block.evId)}); else setIModal({item:items.find(i=>i.id===block.itemId)});}}>
+                                    <div className="tblock-title" style={{color:block.color,fontSize:10}}>{block.title}</div>
+                                    {block.height>28&&<div className="tblock-time" style={{color:block.color,fontSize:8}}>{block.time}</div>}
+                                    {block.kind==="item"&&(
+                                      <button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}88`:"none",borderColor:block.done?block.color:`${block.color}88`,width:12,height:12,fontSize:7,top:2,right:2}}
+                                        onClick={e=>{e.stopPropagation();if(block.memberId) toggleDone(block.itemId,block.memberId,ds);}}>
+                                        {block.done?"✓":""}
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* LISTS */}
+        {view==="lists"&&(
+          <div className="lists-page">
+            <div className="ltabs">
+              {["chores","groceries","todos"].map(t=><button key={t} className={`ltab ${listTab===t?"on":""}`} onClick={()=>setListTab(t)}>{t==="chores"?"Chores":t==="groceries"?"Groceries":"To-Dos"}</button>)}
+            </div>
+            <div className="frow">
+              <button className={`fchip ${listFmid===null?"on":""}`} onClick={()=>setListFmid(null)}>All</button>
+              {members.map(m=><button key={m.id} className={`fchip ${listFmid===m.id?"on":""}`} onClick={()=>setListFmid(p=>p===m.id?null:m.id)}><Avatar member={m} size={13}/>{m.name}</button>)}
+            </div>
+            <div className="lscroll">
+              {listItems.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--muted)",fontStyle:"italic",fontSize:14}}>Nothing here yet</div>}
+              {listItems.map(item=>{
+                const assignees=item.assignedTo.map(id=>getMember(members,id)).filter(Boolean);
+                const isMulti=assignees.length>1,unassigned=assignees.length===0;
+                const singleDone=!isMulti?isDone(item.id,unassigned?0:(assignees[0]?.id??0),TODAY):false;
+                const allDone=isMulti&&assignees.every(m=>isDone(item.id,m.id,TODAY));
+                const itemDone=isMulti?allDone:singleDone;
+                return (
+                  <div key={item.id} className={`li${itemDone?" done":""}`} style={{flexDirection:"column",alignItems:"stretch",gap:6}} onClick={()=>setIModal({item})}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      {!isMulti&&<button className={`lchk${singleDone?" on":""}`} onClick={e=>{e.stopPropagation();toggleDone(item.id,unassigned?0:(assignees[0]?.id??0),TODAY);}}>{singleDone?"✓":""}</button>}
+                      <div className="li-body">
+                        <div className="li-text" style={{textDecoration:itemDone?"line-through":"none"}}>{item.text}</div>
+                        <div className="li-meta">
+                          {!isMulti&&assignees.length>0&&<Avatar member={assignees[0]} size={13}/>}
+                          <span className="li-who">{unassigned?"Anyone":isMulti?"Multiple":assignees[0]?.name}</span>
+                          {item.time&&<span className="li-time">{item.time}</span>}
+                          {item.repeat!=="none"&&<span className="li-rep">{item.repeat==="weekly-dow"?"weekly":item.repeat}</span>}
+                          {item.note&&<span className="li-note">📌 {item.note}</span>}
+                        </div>
+                      </div>
+                      {item.points>0&&<div className="pbadge">{item.points}pt · {dFmt(item.points*rate)}</div>}
+                    </div>
+                    {isMulti&&(
+                      <div style={{display:"flex",flexWrap:"wrap",gap:4,paddingLeft:4}} onClick={e=>e.stopPropagation()}>
+                        {assignees.map(m=>{ const done=isDone(item.id,m.id,TODAY); return (
+                          <button key={m.id} onClick={e=>{e.stopPropagation();toggleDone(item.id,m.id,TODAY);}}
+                            style={{display:"flex",alignItems:"center",gap:3,padding:"3px 8px 3px 4px",borderRadius:100,border:`1.5px solid ${done?"var(--sky)":"var(--bdr)"}`,background:done?"var(--sky-lt)":"none",cursor:"pointer",fontSize:11,color:done?"var(--sky)":"var(--ink2)",fontFamily:"DM Sans,sans-serif"}}>
+                            <div style={{width:13,height:13,borderRadius:3,border:`2px solid ${done?"var(--sky)":"var(--bdr)"}`,background:done?"var(--sky)":"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",flexShrink:0}}>{done?"✓":""}</div>
+                            <Avatar member={m} size={13}/>{m.name}
+                          </button>
+                        );})}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="labar">
+              <input className="ainput" value={aText} onChange={e=>setAText(e.target.value)} placeholder={`Add ${listTab==="chores"?"chore":listTab==="groceries"?"item":"to-do"}…`} onKeyDown={e=>e.key==="Enter"&&addQuick()}/>
+              <input className="pinput" type="number" min="0" value={aPts} onChange={e=>setAPts(e.target.value)} title="Points"/>
+              <button className="abtn" onClick={addQuick}>Add</button>
+            </div>
+          </div>
+        )}
+
+        {/* POINTS */}
+        {view==="points"&&(
+          <div className="pts-page">
+            <div className="ltabs">
+              <button className={`ltab ${ptsTab==="lb"?"on":""}`} onClick={()=>setPtsTab("lb")}>Leaderboard</button>
+              <button className={`ltab ${ptsTab==="store"?"on":""}`} onClick={()=>setPtsTab("store")}>Rewards Store</button>
+            </div>
+            {ptsTab==="lb"&&(
+              <div className="pts-scroll">
+                <div className="rate-box">
+                  <div className="rate-lbl">Points → Dollars</div>
+                  <div className="rate-inputs"><span className="rsym">$</span><input className="rin" type="number" min="0.01" step="0.05" value={rate} onChange={e=>setRate(Math.max(0.01,parseFloat(e.target.value)||0.01))}/><span className="rper">/ pt</span></div>
+                  <div className="rate-note">14-day period · started {isoToDisplay(periodStart)}</div>
+                  <button className="reset-btn" onClick={()=>setConfirmModal({title:"Reset period?",message:"Starts a fresh 14-day period. Recurring items reset. Points history kept.",onConfirm:resetPeriod})}>Reset period</button>
+                </div>
+                {lbData.map((m,i)=>(
+                  <div key={m.id} className="lbc">
+                    <div className={`lbc-rank${i===0?" r1":i===1?" r2":i===2?" r3":""}`}>{i+1}</div>
+                    <Avatar member={m} size={32}/>
+                    <div className="lbc-info"><div className="lbc-name">{m.name}</div><div className="lbc-bar"><div className="lbc-fill" style={{width:`${(m.pts/maxPts)*100}%`,background:m.color}}/></div></div>
+                    <div className="lbc-right"><div className="lbc-dollar">{dFmt(m.pts*rate)}</div><div className="lbc-pts">{m.pts} pts</div></div>
+                  </div>
+                ))}
+                {pendingReqs.length>0&&(
+                  <><div style={{fontSize:14,fontWeight:500,margin:"12px 0 7px",color:"var(--ink)"}}>Pending Requests</div>
+                  {pendingReqs.map(req=>{ const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId); if(!rw||!mem) return null; return (
+                    <div key={req.id} className="req-card"><div className="req-icon">{rw.icon}</div><div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts</div></div><div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div></div>
+                  ); })}</>
+                )}
+              </div>
+            )}
+            {ptsTab==="store"&&(
+              <div className="pts-scroll">
+                <div className="store-title">Rewards Store</div>
+                <div className="store-sub">Tap a reward to request it. Parents approve from Leaderboard.</div>
+                <div className="reward-grid">
+                  {rewards.map(r=>(
+                    <div key={r.id} className="reward-card" onClick={()=>setRdModal({reward:r})}>
+                      <div className="reward-icon">{r.icon}</div>
+                      <div className="reward-title">{r.title}</div>
+                      <div className="reward-pts">{r.points} pts · {dFmt(r.points*rate)}</div>
+                    </div>
+                  ))}
+                  <div className="reward-card" style={{display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px dashed var(--bdr)",background:"none",cursor:"pointer"}} onClick={()=>setRwModal({reward:null})}>
+                    <div style={{color:"var(--muted)",fontSize:12}}>+ Add reward</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SETTINGS */}
+        {view==="settings"&&(
+          <div className="set-page">
+            <div className="set-sec">
+              <div className="set-sec-title">Family Members</div>
+              <div className="set-sec-sub">Tap to edit name, photo, color, or email</div>
+              {members.map(m=>(
+                <div key={m.id} className="mer" onClick={()=>setMModal({member:m})}>
+                  <Avatar member={m} size={30}/>
+                  <div className="mer-info"><div className="mer-name">{m.name}</div><div className="mer-contact">{m.email||"No email"}</div></div>
+                  <div className="mer-pts">{earnedInPeriod(m.id)} pts</div>
+                  <div className="mer-arrow">›</div>
+                </div>
+              ))}
+              <button className="add-btn-dashed" onClick={()=>setMModal({member:null})}>+ Add family member</button>
+            </div>
+            <div className="set-sec">
+              <div className="set-sec-title">Rewards Store</div>
+              <div className="set-sec-sub">Manage rewards kids can earn</div>
+              {rewards.map(r=>(
+                <div key={r.id} className="mer" onClick={()=>setRwModal({reward:r})}>
+                  <div style={{fontSize:22}}>{r.icon}</div>
+                  <div className="mer-info"><div className="mer-name">{r.title}</div><div className="mer-contact">{r.points} pts · {dFmt(r.points*rate)}</div></div>
+                  <div className="mer-arrow">›</div>
+                </div>
+              ))}
+              <button className="add-btn-dashed" onClick={()=>setRwModal({reward:null})}>+ Add reward</button>
+            </div>
+            <div className="set-sec">
+              <div className="set-sec-title">Points & Period</div>
+              <div className="set-row">
+                <div><div className="set-row-label">Points value</div><div className="set-row-sub">1 point = ${rate.toFixed(2)}</div></div>
+                <div className="rate-inputs"><span className="rsym">$</span><input className="rin" type="number" min="0.01" step="0.05" value={rate} onChange={e=>setRate(Math.max(0.01,parseFloat(e.target.value)||0.01))}/><span className="rper">/ pt</span></div>
+              </div>
+              <div className="set-row">
+                <div><div className="set-row-label">Period started</div><div className="set-row-sub">{isoToDisplay(periodStart)}</div></div>
+                <button className="reset-btn" onClick={()=>setConfirmModal({title:"Reset period?",message:"Starts a fresh 14-day period.",onConfirm:resetPeriod})}>Reset</button>
+              </div>
+            </div>
+            <div className="set-sec">
+              <div className="set-sec-title">Google Calendar</div>
+              <div className="set-sec-sub">Coming when we move to a real server.</div>
+              <div className="set-row" style={{opacity:.5}}>
+                <div className="set-row-label">Connect Google Calendar</div>
+                <span style={{fontSize:12,color:"var(--muted)"}}>Coming soon</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <nav className="nav">
+          {[{id:"home",lbl:"Home",icon:Icons.home},{id:"lists",lbl:"Lists",icon:Icons.list},{id:"points",lbl:"Points",icon:Icons.star},{id:"settings",lbl:"Settings",icon:Icons.gear}].map(n=>(
+            <button key={n.id} className={`nbtn ${view===n.id?"on":""}`} onClick={()=>setView(n.id)}>
+              {n.icon}{n.lbl}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill}
+        onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}}
+        onDelete={()=>{delItem(iModal.item.id);setIModal(null);}}
+        onClose={()=>setIModal(null)}/>}
+      {eModal&&<EventModal event={eModal.event} members={members}
+        onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}}
+        onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}}
+        onClose={()=>setEModal(null)}/>}
+      {mModal&&<MemberModal member={mModal.member}
+        onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}}
+        onDelete={()=>{delMember(mModal.member.id);setMModal(null);}}
+        onClose={()=>setMModal(null)}/>}
+      {rwModal&&<RewardModal reward={rwModal.reward}
+        onSave={p=>{saveReward(rwModal.reward?.id,p);setRwModal(null);}}
+        onDelete={()=>{delReward(rwModal.reward.id);setRwModal(null);}}
+        onClose={()=>setRwModal(null)}/>}
+      {rdModal&&<RedeemModal reward={rdModal.reward} members={members}
+        onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}}
+        onClose={()=>setRdModal(null)}/>}
+      {confirmModal&&<ConfirmModal title={confirmModal.title} message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm} onClose={()=>setConfirmModal(null)}/>}
+    </>
+  );
+}
