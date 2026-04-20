@@ -1,0 +1,21 @@
+# railway.toml — tells Railway how to build and run FamilyCrate
+# Place this in the ROOT of your familycrate folder
+
+[build]
+builder = "NIXPACKS"
+
+[[services]]
+name = "frontend"
+source = "."
+[services.build]
+buildCommand = "npm install && npm run build"
+[services.deploy]
+startCommand = "npx serve dist -s -l $PORT"
+
+[[services]]
+name = "backend"
+source = "server"
+[services.build]
+buildCommand = "npm install"
+[services.deploy]
+startCommand = "node index.js"
