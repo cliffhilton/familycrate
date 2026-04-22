@@ -876,7 +876,12 @@ function FamilyCrate({ apiData, onLogout }) {
   const eventsOnDate=useCallback(ds=>{const seen=new Set();return events.filter(ev=>{if(!eventAppearsOn(ev,ds))return false;if(seen.has(ev.id))return false;seen.add(ev.id);return true;});},[events]);
   const itemsForMemberOnDate=useCallback((mid,ds)=>items.filter(it=>(it.assignedTo.length===0||it.assignedTo.includes(mid))&&appearsOnDate(it,ds)),[items]);
   const isDone=(itemId,memberId,ds)=>!!doneLog[doneKey(itemId,memberId,ds)];
-  const toggleDone=(itemId,memberId,ds)=>{const k=doneKey(itemId,memberId,ds);setDoneLog(p=>({...p,[k]:!p[k]}));};
+  const toggleDone=(itemId,memberId,ds)=>{
+    const k=doneKey(itemId,memberId,ds);
+    const newVal=!doneLog[k];
+    setDoneLog(p=>({...p,[k]:newVal}));
+    apiToggleDone(k,newVal).catch(console.error);
+  };
 
   const earnedInPeriod=useCallback(mid=>{
     let total=0;
