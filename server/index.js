@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // Root route — serve landing page
-app.get("/", (req, res) => res.sendFile("public/landing.html"));
+app.get("/", (req, res) => res.sendFile("landing.html", { root: __dirname + "/public" }));
 
 // Health check
 app.get("/health", (req, res) => res.json({ status: "ok", app: "FamilyCrate" }));
