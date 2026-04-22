@@ -28,10 +28,10 @@ app.use(cors({
 app.use(express.json());
 
 // Serve static files from the public folder
-app.use(express.static("../public"));
+app.use(express.static("public"));
 
 // Root route — serve landing page
-app.get("/", (req, res) => res.sendFile("../public/landing.html", { root: "." }));
+app.get("/", (req, res) => res.sendFile("public/landing.html"));
 
 // Health check
 app.get("/health", (req, res) => res.json({ status: "ok", app: "FamilyCrate" }));
