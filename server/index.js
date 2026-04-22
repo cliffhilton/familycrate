@@ -6,6 +6,11 @@ import familyRoutes from "./routes/family.js";
 import stripeRoutes from "./routes/stripe.js";
 import webhookRoutes from "./routes/webhooks.js";
 import notifyRoutes from "./routes/notify.js";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 dotenv.config();
 
