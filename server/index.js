@@ -38,6 +38,12 @@ app.use(express.static("public"));
 // Root route — serve landing page
 app.get("/", (req, res) => res.sendFile("landing.html", { root: __dirname + "/public" }));
 
+// Page routes
+app.get("/register", (req, res) => res.sendFile("register.html", { root: __dirname + "/public" }));
+app.get("/login", (req, res) => res.sendFile("login.html", { root: __dirname + "/public" }));
+app.get("/subscription", (req, res) => res.sendFile("subscription.html", { root: __dirname + "/public" }));
+app.get("/app", (req, res) => res.sendFile("app.html", { root: __dirname + "/public" }));
+
 // Health check
 app.get("/health", (req, res) => res.json({ status: "ok", app: "FamilyCrate" }));
 
