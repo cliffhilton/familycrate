@@ -1059,7 +1059,7 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* Header */}
         <header className="hdr">
-          <div className="hdr-logo"><LogoSVG height={28}/></div>
+          <div className="hdr-logo"><LogoSVG height={44}/></div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
             {members.map(m=>{
