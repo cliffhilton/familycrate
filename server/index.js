@@ -36,7 +36,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // Serve React app static assets (JS, CSS, etc.) from dist/ at /app
-app.use("/app", express.static("../dist"));
+app.use("/app", express.static("./dist"));
 
 // Root route — serve landing page
 app.get("/", (req, res) => res.sendFile("landing.html", { root: __dirname + "/public" }));
