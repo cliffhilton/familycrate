@@ -766,8 +766,9 @@ export default function AppShell() {
     if (!token) { setAuthState("login"); return; }
     apiMe()
       .then(({ family }) => {
-        const expired  = family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
-        const cancelled = family?.subscription_status === "cancelled";
+        const isOwner = family?.owner_email === "cliffhilton@gmail.com";
+        const expired  = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
+        const cancelled = !isOwner && family?.subscription_status === "cancelled";
         if (expired || cancelled) { setAuthState("expired"); return; }
         // Load family data
         return apiGetFamily().then(data => { setAppData(data); setAuthState("app"); });
@@ -781,8 +782,9 @@ export default function AppShell() {
   const handleLogin = () => {
     apiMe()
       .then(({ family }) => {
-        const expired = family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
-        if (expired || family?.subscription_status === "cancelled") { setAuthState("expired"); return; }
+        const isOwner = family?.owner_email === "cliffhilton@gmail.com";
+        const expired = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
+        if ((!isOwner && expired) || (!isOwner && family?.subscription_status === "cancelled")) { setAuthState("expired"); return; }
         return apiGetFamily().then(data => { setAppData(data); setAuthState("app"); });
       })
       .catch(() => setAuthState("app"));
