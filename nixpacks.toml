@@ -1,2 +1,0 @@
-[build]
-cmds = ["npm run build", "cd server && npm install && cp -r ../public ."]
