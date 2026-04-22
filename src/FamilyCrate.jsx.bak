@@ -900,98 +900,19 @@ function FamilyCrate({ apiData, onLogout }) {
   },[weekStart,showWeekends]);
 
   // CRUD
-  const saveMember=async(id,p)=>{
-    if(id){
-      setMembers(m=>m.map(v=>v.id===id?{...v,...p}:v));
-      apiUpdateMember(id,p).catch(console.error);
-    } else {
-      try {
-        const res=await apiAddMember(p);
-        setMembers(m=>[...m,{id:res.id||uid(),color:"#3A6ACC",photo:null,email:"",phone:"",...p,...(res.id?{id:res.id}:{})}]);
-      } catch { setMembers(m=>[...m,{id:uid(),color:"#3A6ACC",photo:null,email:"",phone:"",...p}]); }
-    }
-  };
-  const delMember=id=>{
-    setMembers(m=>m.filter(v=>v.id!==id));
-    setItems(i=>i.map(v=>({...v,assignedTo:v.assignedTo.filter(x=>x!==id)})));
-    setFilterMids(p=>{const n=new Set(p);n.delete(id);return n;});
-    apiDeleteMember(id).catch(console.error);
-  };
-  const saveItem=async(id,p)=>{
-    if(id){
-      setItems(i=>i.map(v=>v.id===id?{...v,...p}:v));
-      apiUpdateItem(id,p).catch(console.error);
-    } else {
-      try {
-        const res=await apiAddItem(p);
-        setItems(i=>[...i,{id:res.id||uid(),...p,...(res.id?{id:res.id}:{})}]);
-      } catch { setItems(i=>[...i,{id:uid(),...p}]); }
-    }
-  };
-  const delItem=id=>{
-    setItems(i=>i.filter(v=>v.id!==id));
-    apiDeleteItem(id).catch(console.error);
-  };
-  const addQuick=async()=>{
-    if(!aText.trim()) return;
-    const p={text:aText.trim(),points:Math.max(0,parseInt(aPts)||0),category:listTab,assignedTo:[],repeat:"none",date:TODAY,time:"",duration:30};
-    setAText("");setAPts("5");
-    try {
-      const res=await apiAddItem(p);
-      setItems(i=>[...i,{id:res.id||uid(),...p,...(res.id?{id:res.id}:{})}]);
-    } catch { setItems(i=>[...i,{id:uid(),...p}]); }
-  };
-  const saveEvent=async(id,p)=>{
-    if(id){
-      setEvents(e=>e.map(v=>v.id===id?{...v,...p}:v));
-      apiUpdateEvent(id,p).catch(console.error);
-    } else {
-      try {
-        const res=await apiAddEvent(p);
-        setEvents(e=>[...e,{id:res.id||uid(),...p,...(res.id?{id:res.id}:{})}]);
-      } catch { setEvents(e=>[...e,{id:uid(),...p}]); }
-    }
-  };
-  const delEvent=id=>{
-    setEvents(e=>e.filter(v=>v.id!==id));
-    apiDeleteEvent(id).catch(console.error);
-  };
-  const saveReward=async(id,p)=>{
-    if(id){
-      setRewards(r=>r.map(v=>v.id===id?{...v,...p}:v));
-      apiUpdateReward(id,p).catch(console.error);
-    } else {
-      try {
-        const res=await apiAddReward(p);
-        setRewards(r=>[...r,{id:res.id||uid(),...p,...(res.id?{id:res.id}:{})}]);
-      } catch { setRewards(r=>[...r,{id:uid(),...p}]); }
-    }
-  };
-  const delReward=id=>{
-    setRewards(r=>r.filter(v=>v.id!==id));
-    apiDeleteReward(id).catch(console.error);
-  };
-  const submitRedeem=async(rId,mId)=>{
-    const r=rewards.find(x=>x.id===rId); if(!r) return;
-    try {
-      const res=await apiRedeem({rewardId:rId,memberId:mId});
-      setRedeemReqs(p=>[...p,{id:res.id||uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]);
-    } catch { setRedeemReqs(p=>[...p,{id:uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]); }
-  };
-  const approveReq=id=>{
-    setRedeemReqs(p=>p.map(r=>{if(r.id!==id)return r;setSpentPoints(sp=>({...sp,[r.memberId]:(sp[r.memberId]||0)+(r.pts||0)}));return{...r,status:"approved"};}));
-    apiApproveRedeem(id).catch(console.error);
-  };
-  const declineReq=id=>{
-    setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r));
-    apiDeclineRedeem(id).catch(console.error);
-  };
-  const resetPeriod=()=>{
-    const ns=addDays(TODAY,-periodDays),cleaned={};
-    Object.entries(doneLog).forEach(([k,v])=>{const ds=k.split("__")[2];if(ds>=ns)cleaned[k]=v;});
-    setDoneLog(cleaned);setPeriodStart(ns);setSpentPoints({});setConfirmModal(null);
-    apiUpdateSettings({periodStart:ns,periodDays,rate}).catch(console.error);
-  };
+  const saveMember=(id,p)=>id?setMembers(m=>m.map(v=>v.id===id?{...v,...p}:v)):setMembers(m=>[...m,{id:uid(),color:"#3A6ACC",photo:null,email:"",phone:"",...p}]);
+  const delMember=id=>{setMembers(m=>m.filter(v=>v.id!==id));setItems(i=>i.map(v=>({...v,assignedTo:v.assignedTo.filter(x=>x!==id)})));setFilterMids(p=>{const n=new Set(p);n.delete(id);return n;});};
+  const saveItem=(id,p)=>id?setItems(i=>i.map(v=>v.id===id?{...v,...p}:v)):setItems(i=>[...i,{id:uid(),...p}]);
+  const delItem=id=>setItems(i=>i.filter(v=>v.id!==id));
+  const addQuick=()=>{if(!aText.trim())return;setItems(i=>[...i,{id:uid(),text:aText.trim(),points:Math.max(0,parseInt(aPts)||0),category:listTab,assignedTo:[],repeat:"none",date:TODAY,time:"",duration:30}]);setAText("");setAPts("5");};
+  const saveEvent=(id,p)=>id?setEvents(e=>e.map(v=>v.id===id?{...v,...p}:v)):setEvents(e=>[...e,{id:uid(),...p}]);
+  const delEvent=id=>setEvents(e=>e.filter(v=>v.id!==id));
+  const saveReward=(id,p)=>id?setRewards(r=>r.map(v=>v.id===id?{...v,...p}:v)):setRewards(r=>[...r,{id:uid(),...p}]);
+  const delReward=id=>setRewards(r=>r.filter(v=>v.id!==id));
+  const submitRedeem=(rId,mId)=>{const r=rewards.find(x=>x.id===rId);if(!r)return;setRedeemReqs(p=>[...p,{id:uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]);};
+  const approveReq=id=>{setRedeemReqs(p=>p.map(r=>{if(r.id!==id)return r;setSpentPoints(sp=>({...sp,[r.memberId]:(sp[r.memberId]||0)+(r.pts||0)}));return{...r,status:"approved"};}));};
+  const declineReq=id=>setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r));
+  const resetPeriod=()=>{const ns=addDays(TODAY,-periodDays),cleaned={};Object.entries(doneLog).forEach(([k,v])=>{const ds=k.split("__")[2];if(ds>=ns)cleaned[k]=v;});setDoneLog(cleaned);setPeriodStart(ns);setSpentPoints({});setConfirmModal(null);};
 
   // Touch swipe
   const onTouchStart=e=>{touchStartX.current=e.touches[0].clientX;};
