@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FamilyCrate — Family Life, Organized</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#1A2A38;--ink2:#3A5060;--muted:#7A96A8;
+  --bg:#F0F4F8;--surf:#FAFCFE;--bdr:#D8E4EE;
+  --sky:#3A6A88;--sky-lt:#E0EEF6;--sky-bd:#A0C4DA;
+  --gold:#C49A3C;--gold-lt:#FDF5DC;--gold-bd:#EDD898;
+  --orange:#E07830;--green:#3A9A5A;--teal:#2A9090;--red:#CC3A3A;--blue:#3A6ACC;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(250,252,254,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{text-decoration:none;color:var(--ink2);font-size:14px;transition:color .2s;}
+.nav-links a:hover{color:var(--sky);}
+.nav-cta{padding:9px 22px;background:var(--sky);color:#fff;border-radius:100px;font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;}
+.nav-cta:hover{background:var(--ink);}
+
+/* Shared */
+.container{max-width:1100px;margin:0 auto;}
+section{padding:88px 48px;}
+.section-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:var(--sky-lt);color:var(--sky);border-radius:100px;font-size:12px;font-weight:500;margin-bottom:14px;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);font-weight:500;line-height:1.2;margin-bottom:14px;}
+.section-sub{font-size:16px;color:var(--ink2);line-height:1.65;}
+.btn-primary{padding:15px 30px;background:var(--sky);color:#fff;border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{background:var(--ink);transform:translateY(-1px);}
+.btn-ghost{padding:15px 28px;border:2px solid var(--bdr);color:var(--ink2);border-radius:100px;font-size:15px;font-weight:500;text-decoration:none;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--sky);color:var(--sky);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;align-items:center;padding:120px 48px 80px;background:linear-gradient(140deg,#E8F0F6 0%,#F0F4F8 55%,#E4EEF4 100%);position:relative;overflow:hidden;}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;}
+.hero-orb:nth-child(1){width:500px;height:500px;background:#B8D4E8;top:-100px;right:-60px;}
+.hero-orb:nth-child(2){width:350px;height:350px;background:#D4C4A0;bottom:-60px;left:-60px;}
+.hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;width:100%;max-width:1100px;margin:0 auto;}
+.hero-text{animation:fadeUp .7s ease both;}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;background:var(--gold-lt);border:1px solid var(--gold-bd);border-radius:100px;font-size:12px;font-weight:500;color:var(--gold);margin-bottom:22px;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(38px,5vw,60px);line-height:1.08;font-weight:500;margin-bottom:22px;}
+h1 em{font-style:normal;color:var(--sky);}
+.hero-sub{font-size:17px;color:var(--ink2);line-height:1.7;margin-bottom:34px;max-width:460px;}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.hero-note{font-size:12px;color:var(--muted);}
+.hero-mock{animation:fadeUp .7s .18s ease both;}
+
+/* App mock */
+.mock-wrap{background:var(--surf);border-radius:22px;border:1px solid var(--bdr);box-shadow:0 24px 64px rgba(26,42,56,.14);overflow:hidden;}
+.mock-bar{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--surf);border-bottom:1px solid var(--bdr);}
+.mock-dot{width:8px;height:8px;border-radius:50%;}
+.mock-label{font-size:11px;color:var(--muted);flex:1;margin-left:4px;}
+.mc{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;}
+.mock-col-row{display:flex;border-bottom:1px solid var(--bdr);}
+.mock-gut{width:36px;flex-shrink:0;border-right:1px solid var(--bdr);}
+.mock-ch{flex:1;padding:5px 7px;border-right:1px solid var(--bdr);font-size:9px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:3px;}
+.mock-ch:last-child{border-right:none;}
+.mock-chd{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.mock-body{display:flex;min-height:175px;position:relative;}
+.mock-times{width:36px;flex-shrink:0;border-right:1px solid var(--bdr);position:relative;}
+.mock-tl{position:absolute;right:3px;font-size:7px;color:var(--muted);transform:translateY(-50%);}
+.mock-cols{display:flex;flex:1;}
+.mock-dc{flex:1;border-right:1px solid var(--bdr);padding:2px;position:relative;}
+.mock-dc:last-child{border-right:none;}
+.mb{border-radius:4px;padding:2px 4px;margin-bottom:2px;font-size:8px;font-weight:500;border-left:2px solid transparent;line-height:1.25;}
+.mock-now-line{position:absolute;left:36px;right:0;height:1.5px;background:#E03030;z-index:10;}
+.mock-now-line::before{content:'';position:absolute;left:-3px;top:-3px;width:7px;height:7px;border-radius:50%;background:#E03030;}
+.mock-foot{display:flex;gap:4px;padding:6px;border-top:1px solid var(--bdr);}
+.mock-stat{flex:1;padding:5px;background:var(--bg);border-radius:6px;text-align:center;font-size:8px;color:var(--ink2);font-weight:500;}
+
+/* Problem */
+.problem-s{background:var(--ink);padding:88px 48px;}
+.problem-s .section-badge{background:rgba(255,255,255,.08);color:rgba(255,255,255,.55);}
+.problem-s .section-title{color:#fff;}
+.problem-s .section-sub{color:rgba(255,255,255,.5);}
+.prob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:52px;}
+.prob-card{padding:26px 22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;}
+.prob-icon{margin-bottom:14px;}
+.prob-title{font-size:15px;font-weight:500;color:#fff;margin-bottom:7px;}
+.prob-desc{font-size:13px;color:rgba(255,255,255,.42);line-height:1.6;}
+
+/* Feature sections */
+.feat-s{padding:88px 48px;}
+.feat-s.alt{background:var(--surf);}
+.feat-inner{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;max-width:1100px;margin:0 auto;}
+.feat-inner.flip{direction:rtl;}
+.feat-inner.flip > *{direction:ltr;}
+.feat-text h3{font-family:'Playfair Display',serif;font-size:clamp(24px,3vw,36px);font-weight:500;line-height:1.2;margin-bottom:14px;}
+.feat-text p{font-size:15px;color:var(--ink2);line-height:1.7;margin-bottom:20px;}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:9px;}
+.feat-list li{display:flex;align-items:flex-start;gap:9px;font-size:14px;color:var(--ink2);}
+.feat-list li::before{content:'✓';color:var(--sky);font-weight:700;flex-shrink:0;margin-top:1px;}
+.feat-mock{background:var(--surf);border-radius:18px;border:1.5px solid var(--bdr);box-shadow:0 12px 48px rgba(26,42,56,.09);overflow:hidden;}
+.feat-mock-hdr{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:11px;font-weight:500;color:var(--muted);display:flex;align-items:center;justify-content:space-between;}
+.feat-mock-body{padding:16px;}
+
+/* Chore rows */
+.chore-r{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr);}
+.chore-r:last-child{border-bottom:none;}
+.chore-chk{width:17px;height:17px;border-radius:4px;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;}
+.chore-chk.on{background:var(--sky);border-color:var(--sky);color:#fff;}
+.chore-txt{flex:1;font-size:12px;}
+.chore-txt.done{text-decoration:line-through;color:var(--muted);}
+.chore-av{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;}
+.chore-pts{font-size:10px;font-weight:600;padding:1px 6px;border-radius:100px;background:var(--gold-lt);color:var(--gold);}
+
+/* Leaderboard */
+.lb-r{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--bdr);}
+.lb-r:last-child{border-bottom:none;}
+.lb-rk{font-size:15px;font-weight:300;min-width:16px;color:var(--bdr);}
+.lb-rk.r1{color:var(--gold);}
+.lb-rk.r2{color:#AAA;}
+.lb-rk.r3{color:#B8906A;}
+.lb-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.lb-inf{flex:1;min-width:0;}
+.lb-nm{font-size:12px;font-weight:500;}
+.lb-bw{height:3px;background:var(--bdr);border-radius:2px;margin-top:4px;overflow:hidden;}
+.lb-bf{height:100%;border-radius:2px;}
+.lb-rt{text-align:right;flex-shrink:0;}
+.lb-dl{font-size:16px;font-weight:500;}
+.lb-pt{font-size:10px;color:var(--muted);}
+
+/* Rewards */
+.rw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.rw-card{padding:10px 8px;background:var(--bg);border-radius:8px;border:1.5px solid var(--bdr);text-align:center;}
+.rw-card.sel{border-color:var(--sky);background:var(--sky-lt);}
+.rw-em{font-size:18px;margin-bottom:3px;}
+.rw-tt{font-size:10px;font-weight:500;line-height:1.3;margin-bottom:2px;}
+.rw-pt{font-size:10px;color:var(--gold);font-weight:600;}
+
+/* Week grid */
+.wk-grid{display:grid;grid-template-columns:28px repeat(5,1fr);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;}
+.wk-h{padding:4px 2px;background:var(--bg);border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);font-size:8px;font-weight:600;text-align:center;color:var(--muted);}
+.wk-h.tod{background:var(--sky);color:#fff;}
+.wk-cell{padding:2px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr);min-height:26px;}
+.wk-cell:last-child{border-right:none;}
+.wk-blk{border-radius:3px;padding:2px 3px;font-size:7px;font-weight:500;margin-bottom:1px;border-left:2px solid transparent;}
+
+/* Economy section */
+.econ-s{background:var(--gold-lt);padding:88px 48px;border-top:1px solid var(--gold-bd);border-bottom:1px solid var(--gold-bd);}
+.econ-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;max-width:1100px;margin:0 auto;}
+.econ-vis{background:var(--surf);border-radius:18px;border:1.5px solid var(--bdr);padding:22px;box-shadow:0 8px 32px rgba(26,42,56,.08);}
+
+/* Testimonials */
+.testi-s{background:var(--surf);padding:88px 48px;}
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px;}
+.testi-card{padding:26px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:14px;}
+.testi-stars{color:var(--gold);letter-spacing:2px;margin-bottom:12px;}
+.testi-txt{font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:14px;font-style:italic;}
+.testi-name{font-size:13px;font-weight:600;}
+.testi-fam{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* Pricing */
+.price-s{padding:88px 48px;}
+.price-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:680px;margin:48px auto 0;}
+.price-card{padding:32px;border-radius:20px;border:2px solid var(--bdr);background:var(--surf);position:relative;}
+.price-card.feat{border-color:var(--sky);background:var(--sky);color:#fff;}
+.price-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);padding:4px 16px;background:var(--gold);color:#fff;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap;}
+.price-name{font-size:13px;opacity:.6;margin-bottom:8px;}
+.price-amount{font-family:'Playfair Display',serif;font-size:52px;font-weight:500;line-height:1;margin-bottom:4px;}
+.price-amount sup{font-size:22px;font-family:'DM Sans',sans-serif;font-weight:400;vertical-align:top;margin-top:10px;display:inline-block;}
+.price-amount sub{font-size:16px;font-family:'DM Sans',sans-serif;font-weight:400;}
+.price-desc{font-size:13px;opacity:.6;margin-bottom:22px;}
+.price-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:26px;}
+.price-feats li{display:flex;align-items:center;gap:8px;font-size:13px;}
+.price-feats li::before{content:'✓';font-weight:700;flex-shrink:0;}
+.price-card:not(.feat) .price-feats li::before{color:var(--green);}
+.price-card.feat .price-feats li::before{color:rgba(255,255,255,.8);}
+.price-btn{display:block;text-align:center;padding:13px;border-radius:100px;font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;}
+.price-card:not(.feat) .price-btn{background:var(--sky);color:#fff;}
+.price-card.feat .price-btn{background:#fff;color:var(--sky);}
+.price-trial{text-align:center;font-size:12px;color:var(--muted);margin-top:8px;}
+.price-card.feat .price-trial{color:rgba(255,255,255,.45);}
+
+/* CTA */
+.cta-s{background:var(--sky);padding:88px 48px;text-align:center;}
+.cta-s h2{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,46px);color:#fff;margin-bottom:14px;}
+.cta-s p{color:rgba(255,255,255,.65);font-size:16px;margin-bottom:34px;max-width:480px;margin-left:auto;margin-right:auto;}
+.btn-white{padding:15px 34px;background:#fff;color:var(--sky);border-radius:100px;font-size:15px;font-weight:600;text-decoration:none;transition:all .2s;display:inline-block;}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.2);}
+
+/* Footer */
+footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.foot-links{display:flex;gap:22px;}
+.foot-links a{color:rgba(255,255,255,.38);text-decoration:none;font-size:13px;transition:color .15s;}
+.foot-links a:hover{color:#fff;}
+.foot-copy{color:rgba(255,255,255,.28);font-size:12px;}
+
+/* White logo inline */
+.logo-white svg{height:22px;width:auto;}
+
+@media(max-width:820px){
+  nav{padding:12px 20px;} .nav-links{display:none;}
+  .hero,.feat-s,.feat-s.alt,.problem-s,.econ-s,.testi-s,.price-s,.cta-s{padding:60px 20px;}
+  section{padding:60px 20px;}
+  .hero-inner,.feat-inner,.feat-inner.flip,.econ-inner{grid-template-columns:1fr;direction:ltr;gap:40px;}
+  .hero-mock{display:none;}
+  .price-cards{grid-template-columns:1fr;}
+  footer{flex-direction:column;align-items:center;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <!-- Logo (warm color) -->
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style="height:24px;width:auto;flex-shrink:0;">
+    <defs><style>.l0{fill:#8f6a4a}.l1{fill:#333;mix-blend-mode:multiply;opacity:.2}.l2{isolation:isolate}.l3{fill:#8b6b51}</style></defs>
+    <g class="l2"><g><g>
+      <path class="l3" d="M84.4,32.2h-2.8v12.7h-4.1v-12.7h-1.8v-3.3h1.8v-.8c0-2,.6-3.4,1.7-4.3,1.1-.9,2.8-1.4,5.1-1.3v3.4c-1,0-1.7.1-2.1.5-.4.3-.6,1-.6,1.9v.7h2.8v3.3Z"/>
+      <path class="l3" d="M86.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9-.9.5-2,.7-3.2.7s-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM97.6,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5c-.6.4-1.2.9-1.5,1.6-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+      <path class="l3" d="M130.6,30.4c1.2,1.2,1.8,2.9,1.8,5v9.4h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-16h4v1.9c.5-.7,1.2-1.2,2-1.6.8-.4,1.7-.6,2.7-.6s2.4.3,3.4.8c1,.5,1.7,1.3,2.3,2.3.5-.9,1.3-1.7,2.3-2.2,1-.6,2.1-.8,3.2-.8,2,0,3.5.6,4.8,1.8Z"/>
+      <path class="l3" d="M136.2,26.3c-.5-.5-.7-1-.7-1.7s.2-1.2.7-1.7c.5-.5,1.1-.7,1.8-.7s1.3.2,1.8.7c.5.5.7,1,.7,1.7s-.2,1.2-.7,1.7c-.5.5-1.1.7-1.8.7s-1.3-.2-1.8-.7ZM140,28.9v16h-4v-16h4Z"/>
+      <path class="l3" d="M147.7,23.5v21.4h-4v-21.4h4Z"/>
+      <path class="l3" d="M166.8,28.9l-9.9,23.6h-4.3l3.5-8-6.4-15.6h4.5l4.1,11.2,4.2-11.2h4.3Z"/>
+      <path class="l3" d="M168,32.5c.7-1.2,1.6-2.2,2.8-2.9s2.6-1,4.1-1,3.6.5,4.9,1.5c1.3,1,2.2,2.4,2.6,4.2h-4.4c-.2-.7-.6-1.2-1.2-1.6-.5-.4-1.2-.6-2-.6-1.2,0-2.1.4-2.7,1.3-.7.8-1,2-1,3.6s.3,2.7,1,3.5c.7.8,1.6,1.3,2.7,1.3,1.6,0,2.7-.7,3.2-2.2h4.4c-.4,1.7-1.3,3.1-2.6,4.1-1.3,1-2.9,1.5-4.9,1.5s-2.9-.3-4.1-1-2.1-1.6-2.8-2.9c-.7-1.2-1-2.7-1-4.3s.3-3.1,1-4.3Z"/>
+      <path class="l3" d="M191.2,29.4c.8-.5,1.8-.7,2.9-.7v4.2h-1.1c-1.3,0-2.2.3-2.9.9-.6.6-1,1.6-1,3.1v8h-4v-16h4v2.5c.5-.8,1.2-1.5,2-2Z"/>
+      <path class="l3" d="M196.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9s-2,.7-3.2.7-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM207.5,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5-1.2.9-1.5,1.6c-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+      <path class="l3" d="M220.6,32.2v7.7c0,.5.1.9.4,1.2.3.2.7.4,1.3.4h1.9v3.4h-2.5c-3.4,0-5.1-1.7-5.1-5v-7.7h-1.9v-3.3h1.9v-4h4.1v4h3.6v3.3h-3.6Z"/>
+      <path class="l3" d="M241.6,38.1h-11.7c0,1.2.5,2.1,1.2,2.7.7.7,1.6,1,2.6,1,1.5,0,2.6-.6,3.2-1.9h4.4c-.5,1.5-1.3,2.8-2.7,3.8-1.3,1-2.9,1.5-4.8,1.5s-2.9-.3-4.1-1c-1.2-.7-2.2-1.7-2.9-2.9-.7-1.3-1-2.7-1-4.3s.3-3.1,1-4.4c.7-1.3,1.6-2.2,2.8-2.9,1.2-.7,2.6-1,4.2-1s2.9.3,4.1,1c1.2.7,2.1,1.6,2.8,2.8.7,1.2,1,2.6,1,4.1s0,1.1-.1,1.6ZM237.5,35.4c0-1-.4-1.9-1.1-2.5-.7-.6-1.6-.9-2.7-.9s-1.8.3-2.5.9-1.1,1.5-1.3,2.5h7.6Z"/>
+    </g><g>
+      <path class="l0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+      <path class="l1" d="M24.8,19.1c.7.7,1.4,1.4,2.1,2.2h4.1c-.8-.7-1.5-1.4-2.3-2.1h-4Z"/>
+      <path class="l1" d="M42.9,19.1v2.1h3.3v-2.1h-3.3Z"/>
+      <path class="l1" d="M29.8,54v-2.2h-3.5v2.2h3.5Z"/>
+      <path class="l1" d="M45.6,54c-.7-.7-1.4-1.4-2.1-2.2h-4.8c.7.7,1.4,1.5,2.1,2.2h4.9Z"/>
+    </g></g></g>
+  </svg>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#about">About</a>
+  </div>
+  <a href="/register" class="nav-cta">Start Free Trial</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-orb"></div>
+  <div class="hero-orb"></div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-badge">🏡 Built by a homeschool dad, for families</div>
+      <h1>Family life,<br/><em>finally</em><br/>organized.</h1>
+      <p class="hero-sub">Schedules, chores, points, and rewards — all in one beautiful app. The family hub you've been wishing existed for years.</p>
+      <div class="hero-actions">
+        <a href="/register" class="btn-primary">Start your free 14-day trial →</a>
+        <a href="#features" class="btn-ghost">See how it works</a>
+      </div>
+      <p class="hero-note">No credit card required · Cancel anytime · $19/month after trial</p>
+    </div>
+    <div class="hero-mock">
+      <div class="mock-wrap">
+        <div class="mock-bar">
+          <div class="mock-dot" style="background:#FF6058"></div>
+          <div class="mock-dot" style="background:#FFBD2E"></div>
+          <div class="mock-dot" style="background:#28CA42"></div>
+          <span class="mock-label">FamilyCrate — The Johnson Family</span>
+          <div style="display:flex;gap:3px;">
+            <div class="mc" style="background:#E07830">DA</div>
+            <div class="mc" style="background:#3A9A5A">MO</div>
+            <div class="mc" style="background:#2A9090">EM</div>
+            <div class="mc" style="background:#CC3A3A">JA</div>
+            <div class="mc" style="background:#3A6ACC">LU</div>
+          </div>
+        </div>
+        <div class="mock-col-row">
+          <div class="mock-gut"></div>
+          <div class="mock-ch"><div class="mock-chd" style="background:#E07830"></div>Dad</div>
+          <div class="mock-ch"><div class="mock-chd" style="background:#3A9A5A"></div>Mom</div>
+          <div class="mock-ch"><div class="mock-chd" style="background:#2A9090"></div>Emma</div>
+          <div class="mock-ch"><div class="mock-chd" style="background:#CC3A3A"></div>Jack</div>
+          <div class="mock-ch"><div class="mock-chd" style="background:#3A6ACC"></div>Lucy</div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-times">
+            <div class="mock-tl" style="top:15%">8am</div>
+            <div class="mock-tl" style="top:40%">12pm</div>
+            <div class="mock-tl" style="top:65%">4pm</div>
+            <div class="mock-tl" style="top:88%">7pm</div>
+          </div>
+          <div class="mock-cols">
+            <div class="mock-dc">
+              <div class="mb" style="background:#E0783020;border-left-color:#E07830;color:#E07830;margin-top:22px;">Work<br/>8am</div>
+            </div>
+            <div class="mock-dc">
+              <div class="mb" style="background:#3A9A5A20;border-left-color:#3A9A5A;color:#3A9A5A;margin-top:4px;">School run</div>
+              <div class="mb" style="background:#3A9A5A20;border-left-color:#3A9A5A;color:#3A9A5A;margin-top:30px;">Grocery</div>
+            </div>
+            <div class="mock-dc">
+              <div class="mb" style="background:#2A909020;border-left-color:#2A9090;color:#2A9090;margin-top:10px;">School</div>
+              <div class="mb" style="background:#2A909020;border-left-color:#2A9090;color:#2A9090;margin-top:38px;">Piano</div>
+            </div>
+            <div class="mock-dc">
+              <div class="mb" style="background:#CC3A3A20;border-left-color:#CC3A3A;color:#CC3A3A;margin-top:10px;">School</div>
+              <div class="mb" style="background:#CC3A3A20;border-left-color:#CC3A3A;color:#CC3A3A;margin-top:48px;">Soccer</div>
+            </div>
+            <div class="mock-dc">
+              <div class="mb" style="background:#3A6ACC20;border-left-color:#3A6ACC;color:#3A6ACC;margin-top:10px;">School</div>
+              <div class="mb" style="background:#3A6ACC20;border-left-color:#3A6ACC;color:#3A6ACC;margin-top:58px;">Swim</div>
+            </div>
+          </div>
+          <div class="mock-now-line" style="top:55%;"></div>
+        </div>
+        <div class="mock-foot">
+          <div class="mock-stat" style="color:var(--sky)">📅 Today</div>
+          <div class="mock-stat" style="color:var(--gold)">⭐ 94 pts today</div>
+          <div class="mock-stat" style="color:var(--green)">✓ 6 done</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem-s">
+  <div class="container">
+    <div class="section-badge">Sound familiar?</div>
+    <h2 class="section-title" style="color:#fff;max-width:560px;">You've tried everything.<br/>Nothing quite works.</h2>
+    <p class="section-sub" style="max-width:500px;">After a year of testing apps, spreadsheets, and whiteboards — we built exactly what was missing.</p>
+    <div class="prob-grid">
+      <div class="prob-card">
+        <svg class="prob-icon" width="38" height="38" viewBox="0 0 38 38" fill="none"><rect x="4" y="7" width="30" height="26" rx="3" stroke="white" stroke-width="2"/><line x1="4" y1="15" x2="34" y2="15" stroke="white" stroke-width="2"/><line x1="12" y1="4" x2="12" y2="10" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="26" y1="4" x2="26" y2="10" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="22" r="1.5" fill="white"/><circle cx="19" cy="22" r="1.5" fill="white"/><circle cx="26" cy="22" r="1.5" fill="white"/><circle cx="12" cy="29" r="1.5" fill="white"/><circle cx="19" cy="29" r="1.5" fill="white"/></svg>
+        <div class="prob-title">Scattered schedules</div>
+        <div class="prob-desc">Between school, activities, and co-ops, no one knows where anyone is supposed to be.</div>
+      </div>
+      <div class="prob-card">
+        <svg class="prob-icon" width="38" height="38" viewBox="0 0 38 38" fill="none"><line x1="8" y1="6" x2="26" y2="26" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M24 24C24 24 30 26 32 30C33 33 28 34 24 33C20 32 16 30 16 30L24 24Z" stroke="white" stroke-width="2" fill="none" stroke-linejoin="round"/><line x1="14" y1="10" x2="22" y2="6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        <div class="prob-title">Chores aren't getting done</div>
+        <div class="prob-desc">Nagging doesn't work. Charts get ignored. There's no real motivation baked in.</div>
+      </div>
+      <div class="prob-card">
+        <svg class="prob-icon" width="38" height="38" viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="14" stroke="white" stroke-width="2"/><line x1="19" y1="9" x2="19" y2="29" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M13 13.5C13 13.5 14 11 19 11C24 11 25 14 25 15.5C25 19 19 19.5 19 19.5C19 19.5 26 20 26 24C26 26.5 24 28 19 28C14 28 13 25 13 25" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+        <div class="prob-title">Allowance feels arbitrary</div>
+        <div class="prob-desc">Kids don't connect effort to reward. Money appears like magic and means nothing.</div>
+      </div>
+      <div class="prob-card">
+        <svg class="prob-icon" width="38" height="38" viewBox="0 0 38 38" fill="none"><rect x="4" y="4" width="12" height="12" rx="2.5" stroke="white" stroke-width="2"/><rect x="22" y="4" width="12" height="12" rx="2.5" stroke="white" stroke-width="2"/><rect x="4" y="22" width="12" height="12" rx="2.5" stroke="white" stroke-width="2"/><rect x="22" y="22" width="12" height="12" rx="2.5" stroke="white" stroke-width="2"/></svg>
+        <div class="prob-title">Too many apps</div>
+        <div class="prob-desc">Calendar here, chore app there, grocery list somewhere else. Nobody uses all of them.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 1: Calendar -->
+<section class="feat-s" id="features">
+  <div class="feat-inner container">
+    <div class="feat-text">
+      <div class="section-badge">📅 Schedule</div>
+      <h3>Everyone's week,<br/>at a glance.</h3>
+      <p>See the whole family on one color-coded grid. Day view and week view. Drag and drop to reschedule. The family calendar that finally makes sense.</p>
+      <ul class="feat-list">
+        <li>Color-coded per family member</li>
+        <li>Day view and week view</li>
+        <li>Drag & drop rescheduling</li>
+        <li>Recurring events and school schedules</li>
+        <li>Shared family events and activities</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feat-mock">
+        <div class="feat-mock-hdr"><span>Week — The Johnson Family</span><span style="color:var(--sky);font-weight:500;">Week view</span></div>
+        <div class="feat-mock-body">
+          <div class="wk-grid">
+            <div class="wk-h"></div>
+            <div class="wk-h">MON</div>
+            <div class="wk-h tod">TUE</div>
+            <div class="wk-h">WED</div>
+            <div class="wk-h">THU</div>
+            <div class="wk-h">FRI</div>
+            <div class="wk-h" style="font-size:7px;color:var(--muted);">8am</div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#E0783018;border-left-color:#E07830;color:#E07830;">Work</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#3A9A5A18;border-left-color:#3A9A5A;color:#3A9A5A;">School run</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#E0783018;border-left-color:#E07830;color:#E07830;">Work</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#E0783018;border-left-color:#E07830;color:#E07830;">Work</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#3A9A5A18;border-left-color:#3A9A5A;color:#3A9A5A;">School run</div></div>
+            <div class="wk-h" style="font-size:7px;color:var(--muted);">12pm</div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#2A909018;border-left-color:#2A9090;color:#2A9090;">Lunch/Read</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#CC3A3A18;border-left-color:#CC3A3A;color:#CC3A3A;">Soccer</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#2A909018;border-left-color:#2A9090;color:#2A9090;">Drama</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#CC3A3A18;border-left-color:#CC3A3A;color:#CC3A3A;">Drums</div></div>
+            <div class="wk-cell"></div>
+            <div class="wk-h" style="font-size:7px;color:var(--muted);">4pm</div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#3A6ACC18;border-left-color:#3A6ACC;color:#3A6ACC;">Swim</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#2A909018;border-left-color:#2A9090;color:#2A9090;">Piano</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#3A6ACC18;border-left-color:#3A6ACC;color:#3A6ACC;">Baseball</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#2A909018;border-left-color:#2A9090;color:#2A9090;">Track</div></div>
+            <div class="wk-cell"><div class="wk-blk" style="background:#3A9A5A18;border-left-color:#3A9A5A;color:#3A9A5A;">Grocery</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 2: Chores -->
+<section class="feat-s alt">
+  <div class="feat-inner flip container">
+    <div class="feat-text">
+      <div class="section-badge">✅ Chores</div>
+      <h3>Chores that<br/>actually get done.</h3>
+      <p>Assign recurring chores to specific kids — with time slots and point values baked in. Kids check them off themselves. No nagging required.</p>
+      <ul class="feat-list">
+        <li>Assigned to specific family members</li>
+        <li>Recurring daily, weekly, or monthly</li>
+        <li>Time-blocked on the day view</li>
+        <li>Points earned automatically on completion</li>
+        <li>Optional notes and reminders</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feat-mock">
+        <div class="feat-mock-hdr"><span>Today's chores</span><span style="color:var(--green);font-weight:500;">4 of 7 done ✓</span></div>
+        <div class="feat-mock-body">
+          <div class="chore-r"><div class="chore-chk on">✓</div><div class="chore-txt done">Morning Routine</div><div class="chore-av" style="background:#2A9090">EM</div><div class="chore-pts">3pt</div></div>
+          <div class="chore-r"><div class="chore-chk on">✓</div><div class="chore-txt done">Empty dishwasher</div><div class="chore-av" style="background:#CC3A3A">JA</div><div class="chore-pts">5pt</div></div>
+          <div class="chore-r"><div class="chore-chk on">✓</div><div class="chore-txt done">Read for 30 mins</div><div class="chore-av" style="background:#3A6ACC">LU</div><div class="chore-pts">4pt</div></div>
+          <div class="chore-r"><div class="chore-chk on">✓</div><div class="chore-txt done">Sweep kitchen</div><div class="chore-av" style="background:#CC3A3A">JA</div><div class="chore-pts">6pt</div></div>
+          <div class="chore-r"><div class="chore-chk"></div><div class="chore-txt">Clear dinner table</div><div class="chore-av" style="background:#2A9090">EM</div><div class="chore-pts">5pt</div></div>
+          <div class="chore-r"><div class="chore-chk"></div><div class="chore-txt">Kitchen floors</div><div class="chore-av" style="background:#3A6ACC">LU</div><div class="chore-pts">6pt</div></div>
+          <div class="chore-r"><div class="chore-chk"></div><div class="chore-txt">Load dishwasher</div><div class="chore-av" style="background:#CC3A3A">JA</div><div class="chore-pts">5pt</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POINTS ECONOMY -->
+<section class="econ-s">
+  <div class="econ-inner">
+    <div>
+      <div class="section-badge">⭐ Points System</div>
+      <h2 class="section-title">Kids feel the points.<br/>You control the dollars.</h2>
+      <p class="section-sub" style="margin-bottom:20px;">Set your own points-to-dollars rate — only parents see it. Kids earn big point values that feel exciting. Cash out only when they've really earned it.</p>
+      <p style="font-size:14px;color:var(--ink2);line-height:1.75;">Keep point values high (5–15 per chore) and the dollar rate lower. A full week of chores earns 150 pts — meaningful without breaking the bank. 💪</p>
+    </div>
+    <div class="econ-vis">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;">This week · The Johnson Family</div>
+      <div class="lb-r"><div class="lb-rk r1">1</div><div class="lb-av" style="background:#2A9090">EM</div><div class="lb-inf"><div class="lb-nm">Emma</div><div class="lb-bw"><div class="lb-bf" style="width:91%;background:#2A9090"></div></div></div><div class="lb-rt"><div class="lb-dl">$18.20</div><div class="lb-pt">182 pts</div></div></div>
+      <div class="lb-r"><div class="lb-rk r2">2</div><div class="lb-av" style="background:#CC3A3A">JA</div><div class="lb-inf"><div class="lb-nm">Jack</div><div class="lb-bw"><div class="lb-bf" style="width:73%;background:#CC3A3A"></div></div></div><div class="lb-rt"><div class="lb-dl">$14.60</div><div class="lb-pt">146 pts</div></div></div>
+      <div class="lb-r"><div class="lb-rk r3">3</div><div class="lb-av" style="background:#3A6ACC">LU</div><div class="lb-inf"><div class="lb-nm">Lucy</div><div class="lb-bw"><div class="lb-bf" style="width:58%;background:#3A6ACC"></div></div></div><div class="lb-rt"><div class="lb-dl">$11.60</div><div class="lb-pt">116 pts</div></div></div>
+      <div style="margin-top:14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Rewards store</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        <div style="padding:5px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:100px;font-size:11px;display:flex;align-items:center;gap:4px;">📱 Screen time <strong style="margin-left:2px;">10pt</strong></div>
+        <div style="padding:5px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:100px;font-size:11px;display:flex;align-items:center;gap:4px;">🌙 Stay up late <strong style="margin-left:2px;">12pt</strong></div>
+        <div style="padding:5px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:100px;font-size:11px;display:flex;align-items:center;gap:4px;">💵 Cash out $5 <strong style="margin-left:2px;">20pt</strong></div>
+        <div style="padding:5px 10px;background:var(--bg);border:1.5px solid var(--bdr);border-radius:100px;font-size:11px;display:flex;align-items:center;gap:4px;">🎬 Movie pick <strong style="margin-left:2px;">15pt</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 3: Rewards -->
+<section class="feat-s">
+  <div class="feat-inner container">
+    <div class="feat-text">
+      <div class="section-badge">🎁 Rewards</div>
+      <h3>A store they'll<br/>actually want to shop.</h3>
+      <p>Kids browse rewards, request what they want, and parents approve. Simple, transparent, and wildly motivating. Works better than any allowance system you've tried.</p>
+      <ul class="feat-list">
+        <li>Custom rewards you set yourself</li>
+        <li>Kids request, parents approve</li>
+        <li>Points deducted automatically on approval</li>
+        <li>Screen time, cash, privileges, and more</li>
+        <li>Approval notifications by email</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feat-mock">
+        <div class="feat-mock-hdr"><span>Rewards Store</span><span style="color:var(--gold);font-weight:500;">Lucy — 116 pts</span></div>
+        <div class="feat-mock-body">
+          <div class="rw-grid">
+            <div class="rw-card"><div class="rw-em">📱</div><div class="rw-tt">Screen time</div><div class="rw-pt">10 pts</div></div>
+            <div class="rw-card"><div class="rw-em">🍕</div><div class="rw-tt">Pick dinner</div><div class="rw-pt">8 pts</div></div>
+            <div class="rw-card"><div class="rw-em">🌙</div><div class="rw-tt">Stay up late</div><div class="rw-pt">12 pts</div></div>
+            <div class="rw-card"><div class="rw-em">🎬</div><div class="rw-tt">Movie pick</div><div class="rw-pt">15 pts</div></div>
+            <div class="rw-card sel"><div class="rw-em">✨</div><div class="rw-tt" style="color:var(--sky)">Skip a chore</div><div class="rw-pt">20 pts</div></div>
+            <div class="rw-card"><div class="rw-em">💵</div><div class="rw-tt">Cash out $5</div><div class="rw-pt">20 pts</div></div>
+          </div>
+          <div style="margin-top:12px;padding:9px 11px;background:var(--sky-lt);border-radius:8px;border:1px solid var(--sky-bd);font-size:11px;color:var(--sky);">✓ <strong>Emma</strong> requested "Stay up late" — waiting for parent approval</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 4: Lists -->
+<section class="feat-s alt">
+  <div class="feat-inner flip container">
+    <div class="feat-text">
+      <div class="section-badge">🛒 Lists</div>
+      <h3>Groceries, to-dos,<br/>all in one place.</h3>
+      <p>Shared grocery lists and family to-dos that everyone can see and check off. No more "I didn't know we needed that" at the store.</p>
+      <ul class="feat-list">
+        <li>Shared grocery list everyone sees</li>
+        <li>Family to-dos for one-off tasks</li>
+        <li>Check items off from any device</li>
+        <li>Assign items to specific family members</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feat-mock">
+        <div class="feat-mock-hdr"><span>Groceries</span><span style="color:var(--muted);font-weight:500;">8 items</span></div>
+        <div class="feat-mock-body">
+          <div id="grocery-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi-s">
+  <div class="container">
+    <div class="section-badge">Families love it</div>
+    <h2 class="section-title">Real families, real results.</h2>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-txt">"We've tried every app out there. FamilyCrate is the first one our kids actually open on their own. The points system changed everything."</div>
+        <div class="testi-name">Sarah M.</div>
+        <div class="testi-fam">Mom of 3 · Homeschool family</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-txt">"My kids check their chores before I even ask. The leaderboard makes them competitive in the best way. Worth every penny."</div>
+        <div class="testi-name">James T.</div>
+        <div class="testi-fam">Dad of 2 · Active family</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-txt">"Finally an app that combines our schedule AND chores AND grocery list. I didn't know I needed this until I had it."</div>
+        <div class="testi-name">Rachel K.</div>
+        <div class="testi-fam">Mom of 4 · Homeschool co-op</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="price-s" id="pricing">
+  <div class="container" style="text-align:center;">
+    <div class="section-badge">Pricing</div>
+    <h2 class="section-title">Simple, honest pricing.</h2>
+    <p class="section-sub" style="max-width:460px;margin:0 auto;">One plan. All features. One family. No tiers, no upsells, no surprises.</p>
+    <div class="price-cards">
+      <div class="price-card">
+        <div class="price-name">Monthly</div>
+        <div class="price-amount"><sup>$</sup>19<sub>/mo</sub></div>
+        <div class="price-desc">Billed monthly · cancel anytime</div>
+        <ul class="price-feats">
+          <li>Up to 8 family members</li>
+          <li>Full calendar — day & week views</li>
+          <li>Unlimited chores & events</li>
+          <li>Points, leaderboard & rewards store</li>
+          <li>Grocery & to-do lists</li>
+          <li>Email notifications</li>
+          <li>Works on all devices</li>
+        </ul>
+        <a href="/register" class="price-btn">Start free trial</a>
+        <div class="price-trial">14 days free · No credit card required</div>
+      </div>
+      <div class="price-card feat">
+        <div class="price-badge">Best value — save 30%</div>
+        <div class="price-name">Yearly</div>
+        <div class="price-amount"><sup>$</sup>159<sub>/yr</sub></div>
+        <div class="price-desc">Just $13.25/month · 2 months free</div>
+        <ul class="price-feats">
+          <li>Everything in monthly</li>
+          <li>2 months free</li>
+          <li>Priority support</li>
+          <li>Early access to new features</li>
+        </ul>
+        <a href="/register?plan=yearly" class="price-btn">Start free trial</a>
+        <div class="price-trial">14 days free · No credit card required</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-s">
+  <div class="container">
+    <h2>Your family is ready for this.</h2>
+    <p>Set up takes less than 5 minutes. Your trial starts the moment you sign up — no credit card needed.</p>
+    <a href="/register" class="btn-white">Start your free 14-day trial →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="about">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style="height:20px;width:auto;opacity:.35;">
+    <defs><style>.fw0{fill:#fff}.fw1{fill:#fff;mix-blend-mode:multiply;opacity:.2}.fw2{isolation:isolate}</style></defs>
+    <g class="fw2"><g><g>
+      <path class="fw0" d="M84.4,32.2h-2.8v12.7h-4.1v-12.7h-1.8v-3.3h1.8v-.8c0-2,.6-3.4,1.7-4.3,1.1-.9,2.8-1.4,5.1-1.3v3.4c-1,0-1.7.1-2.1.5-.4.3-.6,1-.6,1.9v.7h2.8v3.3Z"/>
+      <path class="fw0" d="M147.7,23.5v21.4h-4v-21.4h4Z"/>
+      <path class="fw0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8Z"/>
+    </g></g></g>
+  </svg>
+  <div class="foot-links">
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="mailto:hello@familycrate.co">Contact</a>
+  </div>
+  <div class="foot-copy">© 2026 FamilyCrate · familycrate.co</div>
+</footer>
+
+<script>
+// Render grocery list
+const groceries = [
+  [true,"Oat milk",""],
+  [true,"Eggs",""],
+  [true,"Bread",""],
+  [false,"Apples",""],
+  [false,"Peanut butter",""],
+  [false,"Chicken breasts",""],
+  [false,"Pasta & sauce",""],
+  [false,"Dog food","DA"],
+];
+document.getElementById('grocery-list').innerHTML = groceries.map(([done,text,who])=>`
+  <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bdr);">
+    <div style="width:16px;height:16px;border-radius:4px;border:2px solid ${done?'var(--sky)':'var(--bdr)'};background:${done?'var(--sky)':'none'};display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;flex-shrink:0;">${done?'✓':''}</div>
+    <span style="flex:1;font-size:12px;${done?'text-decoration:line-through;color:var(--muted);':''}">${text}</span>
+    ${who?`<div style="width:18px;height:18px;border-radius:50%;background:#E07830;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;">${who}</div>`:''}
+  </div>
+`).join('');
+</script>
+
+</body>
+</html>
