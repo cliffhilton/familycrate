@@ -113,19 +113,60 @@ export async function apiGetFamily() {
   return transformFamily(data);
 }
 
+// ─── Outbound transformers (app camelCase → DB snake_case) ──────────────────
+function toDbItem(d) {
+  const o = {};
+  if (d.text       !== undefined) o.text        = d.text;
+  if (d.points     !== undefined) o.points      = d.points;
+  if (d.category   !== undefined) o.category    = d.category;
+  if (d.assignedTo !== undefined) o.assigned_to = d.assignedTo;
+  if (d.repeat     !== undefined) o.repeat      = d.repeat;
+  if (d.startDate  !== undefined) o.start_date  = d.startDate;
+  if (d.date       !== undefined) o.date        = d.date;
+  if (d.time       !== undefined) o.time        = d.time;
+  if (d.duration   !== undefined) o.duration    = d.duration;
+  if (d.note       !== undefined) o.note        = d.note;
+  return o;
+}
+
+function toDbEvent(d) {
+  const o = {};
+  if (d.title     !== undefined) o.title      = d.title;
+  if (d.memberIds !== undefined) o.member_ids = d.memberIds;
+  if (d.time      !== undefined) o.time       = d.time;
+  if (d.duration  !== undefined) o.duration   = d.duration;
+  if (d.type      !== undefined) o.type       = d.type;
+  if (d.color     !== undefined) o.color      = d.color;
+  if (d.repeat    !== undefined) o.repeat     = d.repeat;
+  if (d.startDate !== undefined) o.start_date = d.startDate;
+  if (d.date      !== undefined) o.date       = d.date;
+  return o;
+}
+
+function toDbMember(d) {
+  const o = {};
+  if (d.name      !== undefined) o.name       = d.name;
+  if (d.color     !== undefined) o.color      = d.color;
+  if (d.photo     !== undefined) o.photo      = d.photo;
+  if (d.email     !== undefined) o.email      = d.email;
+  if (d.role      !== undefined) o.role       = d.role;
+  if (d.sortOrder !== undefined) o.sort_order = d.sortOrder;
+  return o;
+}
+
 // Members
-export async function apiAddMember(data)        { return req("POST",   "/api/family/members",      data); }
-export async function apiUpdateMember(id, data)  { return req("PUT",    `/api/family/members/${id}`, data); }
+export async function apiAddMember(data)        { return req("POST",   "/api/family/members",      toDbMember(data)); }
+export async function apiUpdateMember(id, data)  { return req("PUT",    `/api/family/members/${id}`, toDbMember(data)); }
 export async function apiDeleteMember(id)        { return req("DELETE", `/api/family/members/${id}`); }
 
 // Items
-export async function apiAddItem(data)           { return req("POST",   "/api/family/items",        data); }
-export async function apiUpdateItem(id, data)    { return req("PUT",    `/api/family/items/${id}`,   data); }
+export async function apiAddItem(data)           { return req("POST",   "/api/family/items",        toDbItem(data)); }
+export async function apiUpdateItem(id, data)    { return req("PUT",    `/api/family/items/${id}`,   toDbItem(data)); }
 export async function apiDeleteItem(id)          { return req("DELETE", `/api/family/items/${id}`); }
 
 // Events
-export async function apiAddEvent(data)          { return req("POST",   "/api/family/events",       data); }
-export async function apiUpdateEvent(id, data)   { return req("PUT",    `/api/family/events/${id}`,  data); }
+export async function apiAddEvent(data)          { return req("POST",   "/api/family/events",       toDbEvent(data)); }
+export async function apiUpdateEvent(id, data)   { return req("PUT",    `/api/family/events/${id}`,  toDbEvent(data)); }
 export async function apiDeleteEvent(id)         { return req("DELETE", `/api/family/events/${id}`); }
 
 // Done log

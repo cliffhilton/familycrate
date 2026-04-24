@@ -348,6 +348,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .tblock:hover{filter:brightness(.92);box-shadow:0 2px 8px rgba(0,0,0,.12);}
 .tblock-title{font-size:11px;font-weight:500;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tblock-time{font-size:9px;opacity:.8;margin-top:1px;}
+.tblock-note{font-size:9px;opacity:.75;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tblock-chk{position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:3px;border:1.5px solid rgba(255,255,255,.5);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;}
 .tblock-chk.on{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.85);}
 
@@ -600,7 +601,7 @@ function EventModal({ event, members, onSave, onDelete, onClose }) {
   const toggleWho=id=>setWho(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
   const colorMap={school:SCHOOL_COLOR,activity:CKY_COLOR,family:SHARED_COLOR};
   const calcDur=()=>{ const sm=timeToMinutes(st),em=timeToMinutes(et); return (sm<0||em<0||em<=sm)?60:em-sm; };
-  const save=()=>{ if(!title.trim()) return; const dur=calcDur(); const base={title:title.trim(),time:st,duration:dur,memberIds:who,repeat:rep,type,color:colorMap[type]??SHARED_COLOR}; onSave(rep==="none"?{...base,date}:{...base,startDate:sd,date:sd}); };
+  const save=()=>{ if(!title.trim()) return; const dur=calcDur(); const singleMember=who.length===1?members.find(m=>m.id===who[0]):null; const color=singleMember?singleMember.color:colorMap[type]??SHARED_COLOR; const base={title:title.trim(),time:st,duration:dur,memberIds:who,repeat:rep,type,color}; onSave(rep==="none"?{...base,date}:{...base,startDate:sd,date:sd}); };
   return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{event?"Edit event":"Add event"}</div>
     <div className="mrow"><div className="mlbl">Title</div><input className="min" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Event name" autoFocus onKeyDown={e=>e.key==="Enter"&&save()}/></div>
     <div className="mrow"><div className="mlbl">{rep==="none"?"Date":"Starts"}</div><input className="min" type="date" value={rep==="none"?date:sd} onChange={e=>rep==="none"?setDate(e.target.value):setSd(e.target.value)}/></div>
@@ -1039,6 +1040,7 @@ function FamilyCrate({ apiData, onLogout }) {
               onClick={()=>{if(block.kind==="event") setEModal({event:events.find(e=>e.id===block.evId)});else setIModal({item:items.find(i=>i.id===block.itemId)});}}>
               <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?16:0}}>{block.title}</div>
               {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
+              {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
               {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
             </div>
           );
@@ -1217,6 +1219,7 @@ function FamilyCrate({ apiData, onLogout }) {
                             <div key={block.id} className="tblock" style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 1px)`,width:`calc(${widthPct}% - 3px)`,background:`${block.color}22`,borderLeftColor:block.color,zIndex:block.col+1}} onClick={e=>{e.stopPropagation();if(block.kind==="event") setEModal({event:events.find(ev=>ev.id===block.evId)});else setIModal({item:items.find(i=>i.id===block.itemId)});}}>
                               <div className="tblock-title" style={{color:block.color,fontSize:10}}>{block.title}</div>
                               {block.height>26&&<div className="tblock-time" style={{color:block.color,fontSize:8}}>{block.time}</div>}
+                              {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color,fontSize:8}}>{block.note}</div>}
                               {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:11,height:11,fontSize:7,top:2,right:2}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
                             </div>
                           );})}
