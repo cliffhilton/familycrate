@@ -405,12 +405,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .store-title{font-size:15px;font-weight:500;margin:12px 0 3px;}
 .store-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
 .reward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:7px;margin-bottom:10px;}
-.reward-card{padding:12px 10px;background:var(--surf);border-radius:10px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;}
-.reward-card:hover{border-color:var(--sky);transform:translateY(-1px);}
-.reward-icon{margin-bottom:6px;color:var(--sky);}
-.reward-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-.reward-title{font-size:12px;font-weight:500;line-height:1.3;margin-bottom:3px;}
-.reward-pts{font-size:11px;color:var(--gold);font-weight:500;}
+.reward-card{padding:0;background:var(--surf);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;overflow:hidden;display:flex;flex-direction:column;}
+.reward-card:hover{border-color:var(--sky);transform:translateY(-2px);box-shadow:0 6px 20px rgba(58,106,136,.18);}
+.reward-icon{margin:16px auto 8px;color:var(--sky);}
+.reward-icon svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.reward-title{font-size:14px;font-weight:600;line-height:1.3;margin-bottom:0;padding:0 10px;}
+.reward-pts{font-size:13px;font-weight:700;margin-top:12px;padding:9px 6px;background:var(--sky);color:#fff;width:100%;}
 .req-card{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surf);border-radius:9px;border:1.5px solid var(--bdr);margin-bottom:5px;}
 .req-body{flex:1;min-width:0;}
 .req-name{font-size:12px;font-weight:500;}
@@ -689,6 +689,20 @@ const Icons = {
 };
 
 // ─── Login Gate (standalone — no hooks ordering issues) ───────────────────────
+function LiveClock() {
+  const [t,setT]=useState(()=>new Date());
+  useEffect(()=>{const id=setInterval(()=>setT(new Date()),1000);return()=>clearInterval(id);},[]);
+  const h=t.getHours(),m=t.getMinutes(),ampm=h>=12?"PM":"AM";
+  const hh=h>12?h-12:h===0?12:h;
+  const ds=t.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",lineHeight:1.25}}>
+      <span style={{fontSize:14,fontWeight:600,color:"var(--ink)",letterSpacing:-.2}}>{ds}</span>
+      <span style={{fontSize:11,color:"var(--muted)"}}>{hh}:{String(m).padStart(2,"0")} {ampm}</span>
+    </div>
+  );
+}
+
 function LoginGate({ onLogin }) {
   const [email,setEmail] = useState("");
   const [pw,setPw]       = useState("");
@@ -862,7 +876,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const colHdrsRef     = useRef(null);
   const dragRef        = useRef(null);
   const [dragging,setDragging]   = useState(null);
-  const touchStartX    = useRef(null);
+  // touchStartPos ref declared near onTouchStart
   const isMobile       = typeof window!=="undefined" && window.innerWidth<=660;
 
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
@@ -1002,8 +1016,18 @@ function FamilyCrate({ apiData, onLogout }) {
   };
 
   // Touch swipe
-  const onTouchStart=e=>{touchStartX.current=e.touches[0].clientX;};
-  const onTouchEnd=e=>{if(touchStartX.current===null)return;const dx=e.changedTouches[0].clientX-touchStartX.current;if(Math.abs(dx)>60){if(dx<0)setSelDate(d=>dayView==="day"?addDays(d,1):addDays(d,7));else setSelDate(d=>dayView==="day"?addDays(d,-1):addDays(d,-7));}touchStartX.current=null;};
+  const touchStartPos=useRef(null);
+  const onTouchStart=e=>{touchStartPos.current={x:e.touches[0].clientX,y:e.touches[0].clientY};};
+  const onTouchEnd=e=>{
+    if(!touchStartPos.current)return;
+    const dx=e.changedTouches[0].clientX-touchStartPos.current.x;
+    const dy=e.changedTouches[0].clientY-touchStartPos.current.y;
+    if(Math.abs(dx)>100&&Math.abs(dx)>Math.abs(dy)*2){
+      if(dx<0)setSelDate(d=>dayView==="day"?addDays(d,1):addDays(d,7));
+      else setSelDate(d=>dayView==="day"?addDays(d,-1):addDays(d,-7));
+    }
+    touchStartPos.current=null;
+  };
 
   // Drag
   const onMouseDown=(e,block,mid)=>{if(block.kind!=="item")return;e.preventDefault();dragRef.current={blockId:block.id,itemId:block.itemId,memberId:mid,startY:e.clientY,origTop:block.top};setDragging({blockId:block.id,top:block.top,height:block.height,color:block.color,title:block.title});};
@@ -1063,7 +1087,7 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* Header */}
         <header className="hdr">
-          <div className="hdr-logo"><LogoSVG height={44}/></div>
+          <div className="hdr-logo" style={{cursor:"pointer"}} onClick={()=>setView("home")}><LogoSVG height={44}/></div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
             {members.map(m=>{
@@ -1080,6 +1104,7 @@ function FamilyCrate({ apiData, onLogout }) {
             })}
           </div>
           <div className="hdr-right">
+            <LiveClock/>
             {/* Mobile hamburger */}
             <div style={{position:"relative",display:isMobile?"block":"none"}}>
               <button className="hdr-gear" onClick={()=>setHamOpen(p=>!p)}>
@@ -1296,6 +1321,10 @@ function FamilyCrate({ apiData, onLogout }) {
             </div>
             {ptsTab==="lb"&&(
               <div className="pts-scroll">
+                <div style={{background:"var(--gold-lt)",border:"1.5px solid var(--gold-bd)",borderRadius:10,padding:"9px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:13,color:"var(--ink2)"}}>1 point equals</span>
+                  <span style={{fontSize:17,fontWeight:700,color:"var(--gold)"}}>{dFmt(rate)}</span>
+                </div>
                 {lbData.map((m,i)=>(
                   <div key={m.id} className="lbc">
                     <div className={`lbc-rank${i===0?" r1":i===1?" r2":i===2?" r3":""}`}>{i+1}</div>
@@ -1318,6 +1347,10 @@ function FamilyCrate({ apiData, onLogout }) {
             )}
             {ptsTab==="store"&&(
               <div className="pts-scroll">
+                <div style={{background:"var(--gold-lt)",border:"1.5px solid var(--gold-bd)",borderRadius:10,padding:"9px 14px",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:13,color:"var(--ink2)"}}>1 point equals</span>
+                  <span style={{fontSize:17,fontWeight:700,color:"var(--gold)"}}>{dFmt(rate)}</span>
+                </div>
                 <div className="store-title">Rewards Store</div>
                 <div className="store-sub">Tap a reward to request it. Parents approve from Leaderboard.</div>
                 <div className="reward-grid">
