@@ -261,8 +261,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .ham-item.active{background:var(--sky-lt);color:var(--sky);}
 
 /* Nav */
-.nav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;}
-.nbtn{padding:8px 0 calc(10px + env(safe-area-inset-bottom,0px));border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;transition:color .15s;}
+.nav{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);}
+.nbtn{padding:8px 0 10px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;transition:color .15s;}
 .nbtn.on{color:var(--sky);}
 .nbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 
@@ -404,13 +404,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .lbc-spent{font-size:10px;color:var(--muted);}
 .store-title{font-size:15px;font-weight:500;margin:12px 0 3px;}
 .store-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
-.reward-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:7px;margin-bottom:10px;}
-.reward-card{padding:0;background:var(--surf);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;overflow:hidden;display:flex;flex-direction:column;}
+/* reward-grid defined in reward-card block */
+.reward-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px;}
+@media(min-width:600px){.reward-grid{grid-template-columns:repeat(4,1fr);}}
+.reward-card{padding:0;background:var(--surf);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;overflow:hidden;display:flex;flex-direction:column;min-height:150px;}
 .reward-card:hover{border-color:var(--sky);transform:translateY(-2px);box-shadow:0 6px 20px rgba(58,106,136,.18);}
-.reward-icon{margin:16px auto 8px;color:var(--sky);}
+.reward-card-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 10px 10px;}
+.reward-icon{margin-bottom:10px;color:var(--sky);}
 .reward-icon svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-.reward-title{font-size:14px;font-weight:600;line-height:1.3;margin-bottom:0;padding:0 10px;}
-.reward-pts{font-size:13px;font-weight:700;margin-top:12px;padding:9px 6px;background:var(--sky);color:#fff;width:100%;}
+.reward-title{font-size:17px;font-weight:800;line-height:1.3;}
+.reward-pts{font-size:13px;font-weight:700;padding:9px 6px;background:var(--sky);color:#fff;width:100%;margin-top:auto;}
 .req-card{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surf);border-radius:9px;border:1.5px solid var(--bdr);margin-bottom:5px;}
 .req-body{flex:1;min-width:0;}
 .req-name{font-size:12px;font-weight:500;}
@@ -1356,14 +1359,13 @@ function FamilyCrate({ apiData, onLogout }) {
                 <div className="reward-grid">
                   {rewards.map(r=>(
                     <div key={r.id} className="reward-card" onClick={()=>setRdModal({reward:r})}>
-                      <RewardIcon icon={r.icon}/>
-                      <div className="reward-title">{r.title}</div>
+                      <div className="reward-card-body"><RewardIcon icon={r.icon}/><div className="reward-title">{r.title}</div></div>
                       <div className="reward-pts">{r.points} pts · {dFmt(r.points*rate)}</div>
                     </div>
                   ))}
-                  <div className="reward-card" style={{display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px dashed var(--bdr)",background:"none",cursor:"pointer"}} onClick={()=>setRwModal({reward:null})}>
-                    <div style={{color:"var(--muted)",fontSize:12}}>+ Add reward</div>
-                  </div>
+                  <div className="reward-card" style={{border:"1.5px dashed var(--bdr)",background:"none",cursor:"pointer"}} onClick={()=>setRwModal({reward:null})}>
+                      <div className="reward-card-body" style={{justifyContent:"center"}}><div style={{color:"var(--muted)",fontSize:13,fontWeight:500}}>+ Add reward</div></div>
+                    </div>
                 </div>
               </div>
             )}

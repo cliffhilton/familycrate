@@ -1,0 +1,14 @@
+{
+  "name": "FamilyCrate",
+  "short_name": "FamilyCrate",
+  "description": "Your family hub for chores, calendar, and rewards",
+  "start_url": "/app/",
+  "display": "standalone",
+  "background_color": "#F0F4F8",
+  "theme_color": "#3A6A88",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
