@@ -208,6 +208,12 @@ const INIT_REWARDS = [
   { id:6, title:"Cash out $5",              points:20, icon:"cash" },
 ];
 
+const INIT_CATEGORIES = [
+  { id:"chores", label:"Chores" },
+  { id:"groceries", label:"Groceries" },
+  { id:"todos", label:"To-Dos" },
+];
+
 const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS_SHORT   = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
@@ -839,6 +845,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [doneLog,setDLR]     = useState(()=>apiData?.doneLog         ? apiData.doneLog : load("fc_donelog",{}));
   const [redeemReqs,setRRR]  = useState(()=>apiData?.redeemReqs      ? apiData.redeemReqs : load("fc_reqs",[]));
   const [spentPoints,setSPR] = useState(()=>apiData?.spentPoints     ? apiData.spentPoints : load("fc_spent",{}));
+  const [categories,setCatsR] = useState(()=>apiData?.categories?.length ? apiData.categories : load("fc_cats",INIT_CATEGORIES));
   const [rate,setRateR]      = useState(()=>apiData?.rate            ? apiData.rate    : load("fc_rate",0.25));
   const [periodStart,setPSR] = useState(()=>apiData?.periodStart     ? apiData.periodStart : load("fc_ps",PERIOD_START));
   const [periodDays,setPDR]  = useState(()=>apiData?.periodDays      ? apiData.periodDays  : load("fc_pd",14));
@@ -851,6 +858,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const setRedeemReqs  = v=>{const n=typeof v==="function"?v(redeemReqs):v; save("fc_reqs",n);     setRRR(n);};
   const setSpentPoints = v=>{const n=typeof v==="function"?v(spentPoints):v;save("fc_spent",n);    setSPR(n);};
   const setRate        = v=>{const n=typeof v==="function"?v(rate):v;       save("fc_rate",n);     setRateR(n);};
+  const setCategories  = v=>{const n=typeof v==="function"?v(categories):v; save("fc_cats",n); setCatsR(n); apiUpdateSettings({categories:n}).catch(console.error);};
   const setPeriodStart = v=>{const n=typeof v==="function"?v(periodStart):v;save("fc_ps",n);       setPSR(n);};
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
@@ -864,7 +872,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [calOpen,setCalOpen]     = useState(false);
   const [hamOpen,setHamOpen]     = useState(false);
   const [addOpen,setAddOpen]     = useState(false);
-  const [listTab,setListTab]     = useState("chores");
+  const [listTab,setListTab]     = useState(()=>{ const cats=apiData?.categories?.length?apiData.categories:INIT_CATEGORIES; return cats[0]?.id||"chores"; });
   const [listFmid,setListFmid]   = useState(null);
   const [iModal,setIModal]       = useState(null);
   const [eModal,setEModal]       = useState(null);
@@ -1083,6 +1091,8 @@ function FamilyCrate({ apiData, onLogout }) {
   const listItems=items.filter(it=>{if(it.category!==listTab)return false;if(listFmid!==null&&!it.assignedTo.includes(listFmid)&&it.assignedTo.length>0)return false;return true;});
   const dayLabel=selDate===TODAY?"Today":isoToDisplay(selDate);
 
+  useEffect(()=>{ window._fcCats=categories; },[categories]);
+
   return (
     <>
       <style>{CSS}</style>
@@ -1265,7 +1275,7 @@ function FamilyCrate({ apiData, onLogout }) {
         {/* LISTS */}
         {view==="lists"&&(
           <div className="lists-page">
-            <div className="ltabs">{["chores","groceries","todos"].map(t=><button key={t} className={`ltab ${listTab===t?"on":""}`} onClick={()=>setListTab(t)}>{t==="chores"?"Chores":t==="groceries"?"Groceries":"To-Dos"}</button>)}</div>
+            <div className="ltabs" style={{overflowX:"auto",scrollbarWidth:"none"}}>{categories.map(cat=><button key={cat.id} className={`ltab ${listTab===cat.id?"on":""}`} onClick={()=>setListTab(cat.id)}>{cat.label}</button>)}</div>
             <div className="frow">
               <button className={`fchip ${listFmid===null?"on":""}`} onClick={()=>setListFmid(null)}>All</button>
               {members.map(m=><button key={m.id} className={`fchip ${listFmid===m.id?"on":""}`} onClick={()=>setListFmid(p=>p===m.id?null:m.id)}><Avatar member={m} size={13}/>{m.name}</button>)}
@@ -1308,7 +1318,7 @@ function FamilyCrate({ apiData, onLogout }) {
               })}
             </div>
             <div className="labar">
-              <input className="ainput" value={aText} onChange={e=>setAText(e.target.value)} placeholder={`Add ${listTab==="chores"?"chore":listTab==="groceries"?"item":"to-do"}…`} onKeyDown={e=>e.key==="Enter"&&addQuick()}/>
+              <input className="ainput" value={aText} onChange={e=>setAText(e.target.value)} placeholder={`Add to ${categories.find(c=>c.id===listTab)?.label||listTab}…`} onKeyDown={e=>e.key==="Enter"&&addQuick()}/>
               <input className="pinput" type="number" min="0" value={aPts} onChange={e=>setAPts(e.target.value)} title="Points"/>
               <button className="abtn" onClick={addQuick}>Add</button>
             </div>
@@ -1399,6 +1409,19 @@ function FamilyCrate({ apiData, onLogout }) {
                 </div>
               ))}
               <button className="add-dashed" onClick={()=>setRwModal({reward:null})}>+ Add reward</button>
+            </div>
+            <div className="set-sec">
+              <div className="set-sec-title">List Categories</div>
+              <div className="set-sec-sub">Customize your list tabs</div>
+              {categories.map((cat,i)=>(
+                <div key={cat.id} className="set-row" style={{gap:6}}>
+                  <input className="min" style={{flex:1,fontSize:13,padding:"6px 10px"}} value={cat.label}
+                    onChange={e=>setCategories(cs=>cs.map((c,j)=>j===i?{...c,label:e.target.value}:c))}/>
+                  {categories.length>1&&<button onClick={()=>{setCategories(cs=>cs.filter((_,j)=>j!==i));if(listTab===cat.id)setListTab(categories[0]?.id||"chores");}}
+                    style={{padding:"6px 10px",borderRadius:7,border:"none",background:"#F0D8D0",color:"#8A3A2A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Remove</button>}
+                </div>
+              ))}
+              <button className="add-dashed" onClick={()=>{const id="cat_"+Date.now();setCategories(cs=>[...cs,{id,label:"New List"}]);setListTab(id);}}>+ Add category</button>
             </div>
             <div className="set-sec">
               <div className="set-sec-title">Points & Dollars</div>

@@ -42,7 +42,7 @@ router.get("/", requireAuth, async (req, res) => {
       supabase.from("rewards").select("*").eq("family_id", fid),
       supabase.from("done_log").select("*").eq("family_id", fid),
       supabase.from("redeem_requests").select("*").eq("family_id", fid).neq("status", "declined"),
-      supabase.from("families").select("rate, period_start, period_days, spent_points").eq("id", fid).single(),
+      supabase.from("families").select("rate, period_start, period_days, spent_points, categories").eq("id", fid).single(),
     ]);
 
     res.json({
@@ -185,7 +185,7 @@ router.put("/redeem/:id/decline", auth, async (req, res) => {
 
 // ── Family settings ───────────────────────────────────────────────────────────
 router.put("/settings", auth, async (req, res) => {
-  const allowed = ["rate", "period_start", "period_days", "spent_points"];
+  const allowed = ["rate", "period_start", "period_days", "spent_points", "categories"];
   const update = {};
   allowed.forEach(k => { if (req.body[k] !== undefined) update[k] = req.body[k]; });
   const { error } = await supabase.from("families").update(update).eq("id", req.familyId);

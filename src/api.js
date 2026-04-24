@@ -84,6 +84,7 @@ function transformFamily(data) {
     rate:        data.rate         || 0.25,
     periodStart: data.periodStart  || data.period_start || null,
     periodDays:  data.periodDays   || data.period_days  || 14,
+    categories:  data.categories || [],
   };
 }
 
