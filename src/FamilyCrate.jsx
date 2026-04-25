@@ -925,29 +925,33 @@ function FamilyCrate({ apiData, onLogout }) {
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
   const [view,setView_]          = useState("home");
+  const refreshData=()=>apiGetFamily().then(data=>{
+    if(data.members?.length) setMR(data.members);
+    if(data.items?.length) setIR(data.items);
+    if(data.events?.length) setER(data.events);
+    if(data.rewards?.length) setRwR(data.rewards);
+    if(data.doneLog) setDLR(data.doneLog);
+    if(data.redeemReqs) setRRR(prev=>{
+      const dbIds=new Set(data.redeemReqs.map(r=>r.id));
+      const localOnly=prev.filter(r=>!dbIds.has(r.id));
+      return [...data.redeemReqs,...localOnly];
+    });
+    if(data.spentPoints) setSPR(data.spentPoints);
+    if(data.categories?.length) setCatsR(data.categories);
+    if(data.rate) setRateR(data.rate);
+  }).catch(()=>{});
+
   const setView=v=>{
     setView_(v);
     if(v==="points"){
       const approvedIds=redeemReqs.filter(r=>r.status==="approved").map(r=>r.id);
       localStorage.setItem("fc_seen_rewards",JSON.stringify(approvedIds));
       setSeenRewards(approvedIds);
+      refreshData();
+    } else if(v==="lists"||v==="home"){
+      refreshData();
     }
-    apiGetFamily().then(data=>{
-      if(data.members?.length) setMR(data.members);
-      if(data.items?.length) setIR(data.items);
-      if(data.events?.length) setER(data.events);
-      if(data.rewards?.length) setRwR(data.rewards);
-      if(data.doneLog) setDLR(data.doneLog);
-      if(data.redeemReqs) setRRR(prev=>{
-        // Merge: keep any locally pending ones not yet in DB
-        const dbIds=new Set(data.redeemReqs.map(r=>r.id));
-        const localOnly=prev.filter(r=>!dbIds.has(r.id));
-        return [...data.redeemReqs,...localOnly];
-      });
-      if(data.spentPoints) setSPR(data.spentPoints);
-      if(data.categories?.length) setCatsR(data.categories);
-      if(data.rate) setRateR(data.rate);
-    }).catch(()=>{});
+    // Don't refresh on settings — avoids wiping pending redeem state
   };
   const [dayView,setDayView]     = useState("day");
   const [ptsTab,setPtsTab]       = useState("lb");
