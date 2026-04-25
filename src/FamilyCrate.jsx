@@ -938,7 +938,12 @@ function FamilyCrate({ apiData, onLogout }) {
       if(data.events?.length) setER(data.events);
       if(data.rewards?.length) setRwR(data.rewards);
       if(data.doneLog) setDLR(data.doneLog);
-      if(data.redeemReqs) setRRR(data.redeemReqs);
+      if(data.redeemReqs) setRRR(prev=>{
+        // Merge: keep any locally pending ones not yet in DB
+        const dbIds=new Set(data.redeemReqs.map(r=>r.id));
+        const localOnly=prev.filter(r=>!dbIds.has(r.id));
+        return [...data.redeemReqs,...localOnly];
+      });
       if(data.spentPoints) setSPR(data.spentPoints);
       if(data.categories?.length) setCatsR(data.categories);
       if(data.rate) setRateR(data.rate);

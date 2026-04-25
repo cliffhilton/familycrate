@@ -79,7 +79,7 @@ function transformFamily(data) {
     events:      (data.events      || []).map(transformEvent),
     rewards:     (data.rewards     || []).map(transformReward),
     doneLog:     data.doneLog      || data.done_log     || {},
-    redeemReqs:  data.redeemReqs   || data.redeem_reqs  || [],
+    redeemReqs:  (data.redeemReqs||data.redeem_reqs||[]).map(r=>({...r,memberId:r.member_id||r.memberId,rewardId:r.reward_id||r.rewardId,pts:r.points||r.pts})),
     spentPoints: data.spentPoints  || data.spent_points || {},
     rate:        data.rate         || 0.25,
     periodStart: data.periodStart  || data.period_start || null,
@@ -179,7 +179,7 @@ export async function apiUpdateReward(id, data)  { return req("PUT",    `/api/fa
 export async function apiDeleteReward(id)        { return req("DELETE", `/api/family/rewards/${id}`); }
 
 // Redemptions
-export async function apiRedeem(data)            { return req("POST",   "/api/family/redeem",               data); }
+export async function apiRedeem(data)            { return req("POST",   "/api/family/redeem", {reward_id:data.rewardId,member_id:data.memberId}); }
 export async function apiApproveRedeem(id)       { return req("PUT",    `/api/family/redeem/${id}/approve`); }
 export async function apiDeclineRedeem(id)       { return req("PUT",    `/api/family/redeem/${id}/decline`); }
 
