@@ -566,7 +566,7 @@ function ModalWrap({ children, onClose }) {
 }
 
 // ─── Item Modal ───────────────────────────────────────────────────────────────
-function ItemModal({ item, members, prefill, onSave, onDelete, onClose }) {
+function ItemModal({ item, members, prefill, categories, onSave, onDelete, onClose }) {
   const [text,setText]   = useState(item?.text??"");
   const [pts,setPts]     = useState(String(item?.points??5));
   const [cat,setCat]     = useState(item?.category??"chores");
@@ -583,7 +583,7 @@ function ItemModal({ item, members, prefill, onSave, onDelete, onClose }) {
     <div className="mrow"><div className="mlbl">Description</div><input className="min" value={text} onChange={e=>setText(e.target.value)} placeholder="What needs doing?" autoFocus onKeyDown={e=>e.key==="Enter"&&save()}/></div>
     <div className="mgrid2">
       <div className="mrow"><div className="mlbl">Points</div><input className="min" type="number" min="0" value={pts} onChange={e=>setPts(e.target.value)}/></div>
-      <div className="mrow"><div className="mlbl">Category</div><select className="min" value={cat} onChange={e=>setCat(e.target.value)}><option value="chores">Chores</option><option value="groceries">Groceries</option><option value="todos">To-Dos</option></select></div>
+      <div className="mrow"><div className="mlbl">Category</div><select className="min" value={cat} onChange={e=>setCat(e.target.value)}>{(categories||[{id:"chores",label:"Chores"},{id:"groceries",label:"Groceries"},{id:"todos",label:"To-Dos"}]).map(cc=><option key={cc.id} value={cc.id}>{cc.label}</option>)}</select></div>
     </div>
     <div className="mgrid3">
       <div className="mrow"><div className="mlbl">Start time</div><select className="min" value={st} onChange={e=>setSt(e.target.value)}><option value="">No time</option>{TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
@@ -698,6 +698,68 @@ const Icons = {
 };
 
 // ─── Login Gate (standalone — no hooks ordering issues) ───────────────────────
+function PinModal({ onSuccess, onClose, isSetup, currentPin }) {
+  const [digits,setDigits]=useState(["","","",""]);
+  const [confirm,setConfirm]=useState(["","","",""]);
+  const [step,setStep]=useState("enter");
+  const [err,setErr]=useState("");
+  const r0=useRef(),r1=useRef(),r2=useRef(),r3=useRef();
+  const c0=useRef(),c1=useRef(),c2=useRef(),c3=useRef();
+  const refs=[r0,r1,r2,r3];
+  const crefs=[c0,c1,c2,c3];
+
+  const handle=(i,val,arr,setArr,rfs,next)=>{
+    if(!/^[0-9]?$/.test(val))return;
+    const n=[...arr];n[i]=val;setArr(n);
+    if(val&&i<3)rfs[i+1].current?.focus();
+    if(val&&i===3){
+      const pin=n.join("");
+      if(isSetup&&step==="enter"){setStep("confirm");setErr("");setTimeout(()=>crefs[0].current?.focus(),100);}
+      else if(isSetup&&step==="confirm"){
+        if(pin===digits.join("")){onSuccess(digits.join(""));}
+        else{setErr("PINs don't match");setConfirm(["","","",""]);setTimeout(()=>crefs[0].current?.focus(),100);}
+      } else {
+        if(pin===currentPin){onSuccess(pin);}
+        else{setErr("Incorrect PIN");setDigits(["","","",""]);setTimeout(()=>refs[0].current?.focus(),100);}
+      }
+    }
+  };
+
+  const activeArr=isSetup&&step==="confirm"?confirm:digits;
+  const activeSet=isSetup&&step==="confirm"?setConfirm:setDigits;
+  const activeRefs=isSetup&&step==="confirm"?crefs:refs;
+
+  return (
+    <ModalWrap onClose={onClose}>
+      <div className="modal" style={{alignItems:"center",textAlign:"center"}}>
+        <div className="mhandle"/>
+        <div style={{fontSize:32,marginBottom:4}}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--sky)" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div className="mtitle">{isSetup?(step==="confirm"?"Confirm PIN":"Set Parent PIN"):"Parent Mode"}</div>
+        <div style={{fontSize:13,color:"var(--muted)",marginBottom:8}}>
+          {isSetup?(step==="confirm"?"Enter your PIN again to confirm":"Choose a 4-digit PIN for parent access"):"Enter your 4-digit PIN to continue"}
+        </div>
+        {err&&<div style={{fontSize:12,color:"#CC3A3A",marginBottom:4}}>{err}</div>}
+        <div style={{display:"flex",gap:12,justifyContent:"center",margin:"8px 0"}}>
+          {[0,1,2,3].map(i=>(
+            <input key={i} ref={activeRefs[i]} type="password" inputMode="numeric" maxLength={1}
+              value={activeArr[i]}
+              onChange={e=>handle(i,e.target.value,activeArr,activeSet,activeRefs)}
+              onKeyDown={e=>{if(e.key==="Backspace"&&!activeArr[i]&&i>0)activeRefs[i-1].current?.focus();}}
+              style={{width:48,height:56,borderRadius:10,border:"2px solid var(--bdr)",background:"var(--bg)",fontFamily:"DM Sans,sans-serif",fontSize:24,textAlign:"center",outline:"none",color:"var(--ink)"}}
+              autoFocus={i===0}
+            />
+          ))}
+        </div>
+        <div className="mact" style={{justifyContent:"center"}}>
+          <button className="mbtn-ghost" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </ModalWrap>
+  );
+}
+
 function LiveClock() {
   const [t,setT]=useState(()=>new Date());
   useEffect(()=>{const id=setInterval(()=>setT(new Date()),1000);return()=>clearInterval(id);},[]);
@@ -862,7 +924,21 @@ function FamilyCrate({ apiData, onLogout }) {
   const setPeriodStart = v=>{const n=typeof v==="function"?v(periodStart):v;save("fc_ps",n);       setPSR(n);};
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
-  const [view,setView]           = useState("home");
+  const [view,setView_]          = useState("home");
+  const setView=v=>{
+    setView_(v);
+    apiGetFamily().then(data=>{
+      if(data.members?.length) setMR(data.members);
+      if(data.items?.length) setIR(data.items);
+      if(data.events?.length) setER(data.events);
+      if(data.rewards?.length) setRwR(data.rewards);
+      if(data.doneLog) setDLR(data.doneLog);
+      if(data.redeemReqs) setRRR(data.redeemReqs);
+      if(data.spentPoints) setSPR(data.spentPoints);
+      if(data.categories?.length) setCatsR(data.categories);
+      if(data.rate) setRateR(data.rate);
+    }).catch(()=>{});
+  };
   const [dayView,setDayView]     = useState("day");
   const [ptsTab,setPtsTab]       = useState("lb");
   const [selDate,setSelDate]     = useState(TODAY);
@@ -880,6 +956,9 @@ function FamilyCrate({ apiData, onLogout }) {
   const [rwModal,setRwModal]     = useState(null);
   const [rdModal,setRdModal]     = useState(null);
   const [confirmModal,setConfirmModal] = useState(null);
+  const [pinModal,setPinModal]       = useState(null);
+  const [parentPin,setParentPin]     = useState(()=>localStorage.getItem("fc_pin")||"");
+  const [pinUnlocked,setPinUnlocked] = useState(false);
   const [aText,setAText]         = useState("");
   const [aPts,setAPts]           = useState("5");
   const [nowMins,setNowMins]     = useState(()=>{const n=new Date();return n.getHours()*60+n.getMinutes();});
@@ -1090,8 +1169,6 @@ function FamilyCrate({ apiData, onLogout }) {
   const pendingReqs=redeemReqs.filter(r=>r.status==="pending");
   const listItems=items.filter(it=>{if(it.category!==listTab)return false;if(listFmid!==null&&!it.assignedTo.includes(listFmid)&&it.assignedTo.length>0)return false;return true;});
   const dayLabel=selDate===TODAY?"Today":isoToDisplay(selDate);
-
-  useEffect(()=>{ window._fcCats=categories; },[categories]);
 
   return (
     <>
@@ -1346,16 +1423,7 @@ function FamilyCrate({ apiData, onLogout }) {
                     <div className="lbc-right"><div className="lbc-dollar">{dFmt(Math.max(m.pts,0)*rate)}</div><div className="lbc-pts">{m.pts} pts</div>{(spentPoints[m.id]||0)>0&&<div className="lbc-spent">spent: {spentPoints[m.id]}pt</div>}</div>
                   </div>
                 ))}
-                {pendingReqs.length>0&&(
-                  <><div style={{fontSize:14,fontWeight:500,margin:"12px 0 7px"}}>Pending Requests</div>
-                  {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
-                    <div key={req.id} className="req-card">
-                      <div style={{color:"var(--sky)"}}><RewardIcon icon={rw.icon}/></div>
-                      <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts</div></div>
-                      <div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div>
-                    </div>
-                  );})} </>
-                )}
+
               </div>
             )}
             {ptsTab==="store"&&(
@@ -1385,6 +1453,19 @@ function FamilyCrate({ apiData, onLogout }) {
         {/* SETTINGS */}
         {view==="settings"&&(
           <div className="set-page">
+            {pendingReqs.length>0&&(
+              <div className="set-sec">
+                <div className="set-sec-title">Reward Requests</div>
+                <div className="set-sec-sub">Approve your kids' reward requests</div>
+                {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                  <div key={req.id} className="req-card">
+                    <div style={{color:"var(--sky)"}}><RewardIcon icon={rw.icon}/></div>
+                    <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts</div></div>
+                    <div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div>
+                  </div>
+                );})}
+              </div>
+            )}
             <div className="set-sec">
               <div className="set-sec-title">Family Members</div>
               <div className="set-sec-sub">Tap to edit name, photo, color, or email</div>
@@ -1426,13 +1507,9 @@ function FamilyCrate({ apiData, onLogout }) {
             <div className="set-sec">
               <div className="set-sec-title">Points & Dollars</div>
               <div className="set-sec-sub">Only parents should change this</div>
-              <div className="rate-display">
-                <div><div className="rate-display-lbl">1 point =</div></div>
-                <div className="rate-display-val">{dFmt(rate)}</div>
-              </div>
               <div className="set-row">
                 <div className="set-row-lbl">Point value</div>
-                <div className="rate-edit-row"><span className="rsym">$</span><input className="rin" type="number" min="0.01" step="0.05" value={rate} onChange={e=>setRate(Math.max(0.01,parseFloat(e.target.value)||0.01))}/><span style={{fontSize:12,color:"var(--muted)"}}>/ pt</span></div>
+                <div className="rate-edit-row"><span className="rsym">$</span><input className="rin" type="number" min="0.01" step="0.05" value={rate} onChange={e=>setRateR(Math.max(0.01,parseFloat(e.target.value)||0.01))}/><span style={{fontSize:12,color:"var(--muted)"}}>/ pt</span><button onClick={()=>{save("fc_rate",rate);apiUpdateSettings({rate}).catch(console.error);}} style={{padding:"6px 12px",borderRadius:7,border:"none",background:"var(--sky)",color:"#fff",fontFamily:"DM Sans,sans-serif",fontSize:12,fontWeight:500,cursor:"pointer"}}>Save</button></div>
               </div>
             </div>
             <div className="set-sec">
@@ -1466,17 +1543,23 @@ function FamilyCrate({ apiData, onLogout }) {
 
         <nav className="nav">
           {[{id:"home",lbl:"Home",icon:Icons.home},{id:"lists",lbl:"Lists",icon:Icons.list},{id:"points",lbl:"Points",icon:Icons.star},{id:"settings",lbl:"Settings",icon:Icons.gear}].map(n=>(
-            <button key={n.id} className={`nbtn ${view===n.id?"on":""}`} onClick={()=>setView(n.id)}>{n.icon}{n.lbl}</button>
+            <button key={n.id} className={`nbtn ${view===n.id?"on":""}`} style={{position:"relative"}} onClick={()=>{
+              if(n.id==="settings"){if(!parentPin){setPinModal("setup");return;}if(!pinUnlocked){setPinModal("enter");return;}}
+              setView(n.id);
+            }}>{n.icon}{n.lbl}
+            {n.id==="settings"&&pendingReqs.length>0&&<span style={{position:"absolute",top:6,right:"calc(50% - 14px)",background:"#CC3A3A",color:"#fff",borderRadius:"50%",width:14,height:14,fontSize:9,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700}}>{pendingReqs.length}</span>}
+            </button>
           ))}
         </nav>
       </div>
 
-      {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
+      {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
       {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
       {mModal&&<MemberModal member={mModal.member} onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}} onDelete={()=>{delMember(mModal.member.id);setMModal(null);}} onClose={()=>setMModal(null)}/>}
       {rwModal&&<RewardModal reward={rwModal.reward} onSave={p=>{saveReward(rwModal.reward?.id,p);setRwModal(null);}} onDelete={()=>{delReward(rwModal.reward.id);setRwModal(null);}} onClose={()=>setRwModal(null)}/>}
       {rdModal&&<RedeemModal reward={rdModal.reward} members={members} earnedInPeriod={earnedInPeriod} spentPoints={spentPoints} onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}} onClose={()=>setRdModal(null)}/>}
       {confirmModal&&<ConfirmModal title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onClose={()=>setConfirmModal(null)}/>}
+      {pinModal&&<PinModal isSetup={pinModal==="setup"} currentPin={parentPin} onSuccess={pin=>{if(pinModal==="setup"){localStorage.setItem("fc_pin",pin);setParentPin(pin);}setPinUnlocked(true);setPinModal(null);setView_("settings");}} onClose={()=>setPinModal(null)}/>}
     </>
   );
 }
