@@ -927,6 +927,11 @@ function FamilyCrate({ apiData, onLogout }) {
   const [view,setView_]          = useState("home");
   const setView=v=>{
     setView_(v);
+    if(v==="points"){
+      const approvedIds=redeemReqs.filter(r=>r.status==="approved").map(r=>r.id);
+      localStorage.setItem("fc_seen_rewards",JSON.stringify(approvedIds));
+      setSeenRewards(approvedIds);
+    }
     apiGetFamily().then(data=>{
       if(data.members?.length) setMR(data.members);
       if(data.items?.length) setIR(data.items);
@@ -959,6 +964,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [pinModal,setPinModal]       = useState(null);
   const [parentPin,setParentPin]     = useState(()=>localStorage.getItem("fc_pin")||"");
   const [pinUnlocked,setPinUnlocked] = useState(false);
+  const [seenRewards,setSeenRewards] = useState(()=>{ try{return JSON.parse(localStorage.getItem("fc_seen_rewards")||"[]");}catch{return[];} });
   const [aText,setAText]         = useState("");
   const [aPts,setAPts]           = useState("5");
   const [nowMins,setNowMins]     = useState(()=>{const n=new Date();return n.getHours()*60+n.getMinutes();});
@@ -1003,6 +1009,10 @@ function FamilyCrate({ apiData, onLogout }) {
   const dFmt=n=>n%1===0?`$${n}`:`$${n.toFixed(2)}`;
 
   const visibleMembers=useMemo(()=>filterMids.size===0?members:members.filter(m=>filterMids.has(m.id)),[members,filterMids]);
+  const membersWithNewRewards=useMemo(()=>{
+    const unseen=redeemReqs.filter(r=>r.status==="approved"&&!seenRewards.includes(r.id));
+    return new Set(unseen.map(r=>r.memberId));
+  },[redeemReqs,seenRewards]);
   const toggleFilter=mid=>setFilterMids(p=>{const n=new Set(p);n.has(mid)?n.delete(mid):n.add(mid);return n;});
 
   const weekStart=startOfWeek(selDate);
@@ -1186,7 +1196,12 @@ function FamilyCrate({ apiData, onLogout }) {
                 <button key={m.id} className={`mchip ${isActive?"active":""}`}
                   style={isActive?{background:m.color,borderColor:m.color}:{}}
                   onClick={()=>toggleFilter(m.id)}>
-                  <Avatar member={m} size={20}/>
+                  <div style={{position:"relative"}}>
+                    <Avatar member={m} size={20}/>
+                    {membersWithNewRewards.has(m.id)&&<div style={{position:"absolute",top:-5,right:-5,width:14,height:14,background:"var(--gold)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",border:"1.5px solid #fff"}}>
+                      <svg viewBox="0 0 24 24" width="8" height="8" fill="#fff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>}
+                  </div>
                   <span className="mchip-name">{m.name}</span>
                   {pts>0&&<span className="mchip-pts">{pts}pt{pts!==1?"s":""}</span>}
                 </button>
