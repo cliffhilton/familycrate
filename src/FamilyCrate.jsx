@@ -936,7 +936,7 @@ function FamilyCrate({ apiData, onLogout }) {
       const localOnly=prev.filter(r=>!dbIds.has(r.id));
       return [...data.redeemReqs,...localOnly];
     });
-    if(data.spentPoints) setSPR(data.spentPoints);
+    // spentPoints not refreshed to avoid race with approve writes
     if(data.categories?.length) setCatsR(data.categories);
     if(data.rate) setRateR(data.rate);
   }).catch(()=>{});
@@ -1110,8 +1110,17 @@ function FamilyCrate({ apiData, onLogout }) {
     } catch { setRedeemReqs(p=>[...p,{id:uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]); }
   };
   const approveReq=id=>{
-    setRedeemReqs(p=>p.map(r=>{if(r.id!==id)return r;setSpentPoints(sp=>({...sp,[r.memberId]:(sp[r.memberId]||0)+(r.pts||0)}));return{...r,status:"approved"};}));
-    apiApproveRedeem(id).catch(console.error);
+    setRedeemReqs(p=>p.map(r=>{
+      if(r.id!==id)return r;
+      setSpentPoints(sp=>({...sp,[r.memberId]:(sp[r.memberId]||0)+(r.pts||0)}));
+      return{...r,status:"approved"};
+    }));
+    apiApproveRedeem(id).then(()=>{
+      // Refresh after delay to let DB write complete
+      setTimeout(()=>apiGetFamily().then(data=>{
+        if(data.spentPoints) setSPR(data.spentPoints);
+      }).catch(()=>{}), 1500);
+    }).catch(console.error);
   };
   const declineReq=id=>{
     setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r));
