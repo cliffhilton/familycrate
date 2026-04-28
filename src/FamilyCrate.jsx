@@ -876,7 +876,7 @@ export default function AppShell() {
       .catch(() => setAuthState("app"));
   };
 
-  const handleLogout = () => { apiLogout(); setAppData(null); setAuthState("login"); };
+  const handleLogout = () => { apiLogout(); setAppData(null); setAuthState("login"); localStorage.removeItem("fc_members"); localStorage.removeItem("fc_items"); localStorage.removeItem("fc_events"); localStorage.removeItem("fc_rewards"); localStorage.removeItem("fc_donelog"); localStorage.removeItem("fc_reqs"); localStorage.removeItem("fc_spent"); };
 
   if (authState === "checking") return <LoadingScreen/>;
   if (authState === "login")    return <LoginGate onLogin={handleLogin}/>;
@@ -900,25 +900,28 @@ function FamilyCrate({ apiData, onLogout }) {
   function save(k, v)  { try { localStorage.setItem(k,JSON.stringify(v)); } catch {} }
 
   // Initialize from API data if available, else localStorage
-  const [members,setMR]      = useState(()=>apiData?.members?.length ? apiData.members : load("fc_members",INIT_MEMBERS));
-  const [items,setIR]        = useState(()=>apiData?.items?.length   ? apiData.items   : load("fc_items",  INIT_ITEMS));
-  const [events,setER]       = useState(()=>apiData?.events?.length  ? apiData.events  : load("fc_events", INIT_EVENTS));
-  const [rewards,setRwR]     = useState(()=>apiData?.rewards?.length ? apiData.rewards : load("fc_rewards",INIT_REWARDS));
-  const [doneLog,setDLR]     = useState(()=>apiData?.doneLog         ? apiData.doneLog : load("fc_donelog",{}));
-  const [redeemReqs,setRRR]  = useState(()=>apiData?.redeemReqs      ? apiData.redeemReqs : load("fc_reqs",[]));
-  const [spentPoints,setSPR] = useState(()=>apiData?.spentPoints     ? apiData.spentPoints : load("fc_spent",{}));
+  // Always use API data — Supabase is source of truth
+  const [members,setMR]      = useState(()=>apiData?.members      || INIT_MEMBERS);
+  const [items,setIR]        = useState(()=>apiData?.items        || INIT_ITEMS);
+  const [events,setER]       = useState(()=>apiData?.events       || INIT_EVENTS);
+  const [rewards,setRwR]     = useState(()=>apiData?.rewards      || INIT_REWARDS);
+  const [doneLog,setDLR]     = useState(()=>apiData?.doneLog      || {});
+  const [redeemReqs,setRRR]  = useState(()=>apiData?.redeemReqs   || []);
+  const [spentPoints,setSPR] = useState(()=>apiData?.spentPoints  || {});
   const [categories,setCatsR] = useState(()=>apiData?.categories?.length ? apiData.categories : load("fc_cats",INIT_CATEGORIES));
-  const [rate,setRateR]      = useState(()=>apiData?.rate            ? apiData.rate    : load("fc_rate",0.25));
-  const [periodStart,setPSR] = useState(()=>apiData?.periodStart     ? apiData.periodStart : load("fc_ps",PERIOD_START));
-  const [periodDays,setPDR]  = useState(()=>apiData?.periodDays      ? apiData.periodDays  : load("fc_pd",14));
+  const [rate,setRateR]      = useState(()=>apiData?.rate         || load("fc_rate",0.25));
+  const [periodStart,setPSR] = useState(()=>apiData?.periodStart  || load("fc_ps",PERIOD_START));
+  const [periodDays,setPDR]  = useState(()=>apiData?.periodDays   || load("fc_pd",14));
 
-  const setMembers     = v=>{const n=typeof v==="function"?v(members):v;    save("fc_members",n);  setMR(n);};
-  const setItems       = v=>{const n=typeof v==="function"?v(items):v;      save("fc_items",n);    setIR(n);};
-  const setEvents      = v=>{const n=typeof v==="function"?v(events):v;     save("fc_events",n);   setER(n);};
-  const setRewards     = v=>{const n=typeof v==="function"?v(rewards):v;    save("fc_rewards",n);  setRwR(n);};
-  const setDoneLog     = v=>{const n=typeof v==="function"?v(doneLog):v;    save("fc_donelog",n);  setDLR(n);};
-  const setRedeemReqs  = v=>{const n=typeof v==="function"?v(redeemReqs):v; save("fc_reqs",n);     setRRR(n);};
-  const setSpentPoints = v=>{const n=typeof v==="function"?v(spentPoints):v;save("fc_spent",n);    setSPR(n);};
+  // Server-synced — no localStorage (Supabase is source of truth)
+  const setMembers     = v=>{const n=typeof v==="function"?v(members):v;    setMR(n);};
+  const setItems       = v=>{const n=typeof v==="function"?v(items):v;      setIR(n);};
+  const setEvents      = v=>{const n=typeof v==="function"?v(events):v;     setER(n);};
+  const setRewards     = v=>{const n=typeof v==="function"?v(rewards):v;    setRwR(n);};
+  const setDoneLog     = v=>{const n=typeof v==="function"?v(doneLog):v;    setDLR(n);};
+  const setRedeemReqs  = v=>{const n=typeof v==="function"?v(redeemReqs):v; setRRR(n);};
+  const setSpentPoints = v=>{const n=typeof v==="function"?v(spentPoints):v;setSPR(n);};
+  // Preferences — keep in localStorage for quick load
   const setRate        = v=>{const n=typeof v==="function"?v(rate):v;       save("fc_rate",n);     setRateR(n);};
   const setCategories  = v=>{const n=typeof v==="function"?v(categories):v; save("fc_cats",n); setCatsR(n); apiUpdateSettings({categories:n}).catch(console.error);};
   const setPeriodStart = v=>{const n=typeof v==="function"?v(periodStart):v;save("fc_ps",n);       setPSR(n);};
