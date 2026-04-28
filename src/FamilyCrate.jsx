@@ -988,6 +988,12 @@ function FamilyCrate({ apiData, onLogout }) {
   const isMobile       = typeof window!=="undefined" && window.innerWidth<=660;
 
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
+  useEffect(()=>{
+    const onFocus=()=>refreshData();
+    window.addEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refreshData(); });
+    return()=>window.removeEventListener("focus",onFocus);
+  },[]);
   useEffect(()=>{ if(!gridScrollRef.current) return; const top=minutesToTop(Math.max(nowMins-60,DAY_START))-20; gridScrollRef.current.scrollTop=Math.max(0,top); },[selDate,dayView]);
   useEffect(()=>{ const g=gridScrollRef.current,h=colHdrsRef.current; if(!g||!h) return; const fn=()=>{h.scrollLeft=g.scrollLeft;}; g.addEventListener("scroll",fn,{passive:true}); return()=>g.removeEventListener("scroll",fn); },[dayView,selDate]);
   useEffect(()=>{ const el=gridScrollRef.current; if(!el) return; const fn=e=>{if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&Math.abs(e.deltaX)>30){e.preventDefault();if(e.deltaX>0) setSelDate(d=>dayView==="day"?addDays(d,1):addDays(d,7));else setSelDate(d=>dayView==="day"?addDays(d,-1):addDays(d,-7));}}; el.addEventListener("wheel",fn,{passive:false}); return()=>el.removeEventListener("wheel",fn); },[dayView]);
