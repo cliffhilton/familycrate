@@ -154,8 +154,12 @@ router.delete("/rewards/:id", auth, async (req, res) => {
 
 // ── Redeem requests ───────────────────────────────────────────────────────────
 router.post("/redeem", auth, async (req, res) => {
+  const { reward_id, member_id } = req.body;
+  // Look up points from rewards table
+  const { data: reward } = await supabase.from("rewards").select("points").eq("id", reward_id).single();
+  const points = reward?.points || req.body.points || 0;
   const { data, error } = await supabase.from("redeem_requests")
-    .insert({ ...req.body, family_id: req.familyId, status: "pending" }).select().single();
+    .insert({ reward_id, member_id, points, family_id: req.familyId, status: "pending" }).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
