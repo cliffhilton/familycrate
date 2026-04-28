@@ -358,6 +358,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .tblock-chk{position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:3px;border:1.5px solid rgba(255,255,255,.5);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;}
 .tblock-chk.on{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.85);}
 
+/* Pull to refresh */
+.ptr-wrap{position:relative;flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.ptr-indicator{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none;transition:opacity .2s;}
+.ptr-spinner{width:20px;height:20px;border:2.5px solid var(--bdr);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
 /* Weekend toggle */
 .weekend-toggle{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;border:1.5px solid var(--bdr);background:none;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;color:var(--ink2);transition:all .15s;white-space:nowrap;}
 .weekend-toggle.on{background:var(--sky-lt);border-color:var(--sky);color:var(--sky);}
@@ -984,6 +990,10 @@ function FamilyCrate({ apiData, onLogout }) {
   const colHdrsRef     = useRef(null);
   const dragRef        = useRef(null);
   const [dragging,setDragging]   = useState(null);
+  const [refreshing,setRefreshing] = useState(false);
+  const pullStartY = useRef(null);
+  const pullEl = useRef(null);
+  const [pullDist,setPullDist] = useState(0);
   // touchStartPos ref declared near onTouchStart
   const isMobile       = typeof window!=="undefined" && window.innerWidth<=660;
 
@@ -1142,6 +1152,26 @@ function FamilyCrate({ apiData, onLogout }) {
     apiUpdateSettings({periodStart:ns,periodDays,rate}).catch(console.error);
   };
 
+  // Pull to refresh
+  const onPullStart=e=>{
+    const el=e.currentTarget;
+    if(el.scrollTop===0) pullStartY.current=e.touches[0].clientY;
+  };
+  const onPullMove=e=>{
+    if(pullStartY.current===null)return;
+    const dy=e.touches[0].clientY-pullStartY.current;
+    if(dy>0&&dy<80){setPullDist(dy);}
+  };
+  const onPullEnd=async()=>{
+    if(pullDist>60){
+      setRefreshing(true);setPullDist(0);pullStartY.current=null;
+      await refreshData();
+      setRefreshing(false);
+    } else {
+      setPullDist(0);pullStartY.current=null;
+    }
+  };
+
   // Touch swipe
   const touchStartPos=useRef(null);
   const onTouchStart=e=>{touchStartPos.current={x:e.touches[0].clientX,y:e.touches[0].clientY};};
@@ -1258,7 +1288,8 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* HOME */}
         {view==="home"&&(
-          <div className="page">
+          <div className="page" style={{flexDirection:"column"}}>
+            {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
             {calOpen&&<div className="cal-overlay" onClick={()=>setCalOpen(false)}/>}
             <div className={`cal-drawer ${calOpen?"open":""}`}>
               <div className="cal-inner">
@@ -1335,7 +1366,7 @@ function FamilyCrate({ apiData, onLogout }) {
               </div>
 
               {/* Grid */}
-              <div className="grid-scroll" ref={gridScrollRef} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+              <div className="grid-scroll" ref={gridScrollRef} onTouchStart={e=>{onTouchStart(e);onPullStart(e);}} onTouchMove={onPullMove} onTouchEnd={e=>{onTouchEnd(e);onPullEnd();}}>
                 <div className="grid-body" style={{height:totalGridHeight,minWidth:"100%"}}>
                   <div className="time-gutter" style={{height:totalGridHeight}}>
                     {hours.map(h=><div key={h} className="time-lbl" style={{top:minutesToTop(h)}}>{minutesToTime12(h)}</div>)}
@@ -1393,7 +1424,8 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* LISTS */}
         {view==="lists"&&(
-          <div className="lists-page">
+          <div className="lists-page" onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
+            {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30,position:"relative"}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
             <div className="ltabs" style={{overflowX:"auto",scrollbarWidth:"none"}}>{categories.map(cat=><button key={cat.id} className={`ltab ${listTab===cat.id?"on":""}`} onClick={()=>setListTab(cat.id)}>{cat.label}</button>)}</div>
             <div className="frow">
               <button className={`fchip ${listFmid===null?"on":""}`} onClick={()=>setListFmid(null)}>All</button>
@@ -1446,7 +1478,8 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* POINTS */}
         {view==="points"&&(
-          <div className="pts-page">
+          <div className="pts-page" onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
+            {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30,position:"relative"}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
             <div className="ltabs">
               <button className={`ltab ${ptsTab==="lb"?"on":""}`} onClick={()=>setPtsTab("lb")}>Leaderboard</button>
               <button className={`ltab ${ptsTab==="store"?"on":""}`} onClick={()=>setPtsTab("store")}>Rewards Store</button>
@@ -1494,7 +1527,8 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* SETTINGS */}
         {view==="settings"&&(
-          <div className="set-page">
+          <div className="set-page" onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
+            {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30,position:"relative"}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
             {pendingReqs.length>0&&(
               <div className="set-sec">
                 <div className="set-sec-title">Reward Requests</div>
