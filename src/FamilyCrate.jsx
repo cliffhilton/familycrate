@@ -414,6 +414,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .lbc-dollar{font-size:20px;font-weight:500;line-height:1;}
 .lbc-pts{font-size:11px;color:var(--muted);margin-top:1px;}
 .lbc-spent{font-size:10px;color:var(--muted);}
+.lbc-rewards{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.lbc-reward-chip{display:flex;align-items:center;gap:3px;padding:2px 7px 2px 4px;border-radius:100px;background:var(--gold-lt);border:1px solid var(--gold-bd);font-size:10px;color:var(--gold);font-weight:500;}
 .store-title{font-size:15px;font-weight:500;margin:12px 0 3px;}
 .store-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
 /* reward-grid defined in reward-card block */
@@ -1494,7 +1496,20 @@ function FamilyCrate({ apiData, onLogout }) {
                   <div key={m.id} className="lbc">
                     <div className={`lbc-rank${i===0?" r1":i===1?" r2":i===2?" r3":""}`}>{i+1}</div>
                     <Avatar member={m} size={30}/>
-                    <div className="lbc-info"><div className="lbc-name">{m.name}</div><div className="lbc-bar"><div className="lbc-fill" style={{width:`${(Math.max(m.pts,0)/maxPts)*100}%`,background:m.color}}/></div></div>
+                    <div className="lbc-info">
+                      <div className="lbc-name">{m.name}</div>
+                      <div className="lbc-bar"><div className="lbc-fill" style={{width:`${(Math.max(m.pts,0)/maxPts)*100}%`,background:m.color}}/></div>
+                      {(()=>{const approvedForMember=redeemReqs.filter(r=>r.memberId===m.id&&r.status==="approved");return approvedForMember.length>0&&(
+                        <div className="lbc-rewards">
+                          {approvedForMember.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId);if(!rw)return null;return(
+                            <div key={req.id} className="lbc-reward-chip">
+                              <svg viewBox="0 0 24 24" width="9" height="9" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              {rw.title}
+                            </div>
+                          );})}
+                        </div>
+                      );})()}
+                    </div>
                     <div className="lbc-right"><div className="lbc-dollar">{dFmt(Math.max(m.pts,0)*rate)}</div><div className="lbc-pts">{m.pts} pts</div>{(spentPoints[m.id]||0)>0&&<div className="lbc-spent">spent: {spentPoints[m.id]}pt</div>}</div>
                   </div>
                 ))}
