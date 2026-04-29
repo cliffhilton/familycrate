@@ -17,7 +17,10 @@ async function requireAuth(req, res, next) {
 // ── Check subscription ────────────────────────────────────────────────────────
 async function requireSubscription(req, res, next) {
   const { data: family } = await supabase
-    .from("families").select("subscription_status, trial_ends_at").eq("id", req.familyId).single();
+    .from("families").select("subscription_status, trial_ends_at, owner_email").eq("id", req.familyId).single();
+
+  // Permanent free access for owner
+  if (family?.owner_email === "cliffhilton@gmail.com") return next();
 
   const active = family?.subscription_status === "active";
   const trialing = family?.subscription_status === "trialing" &&
