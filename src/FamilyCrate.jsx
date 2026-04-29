@@ -992,6 +992,8 @@ function FamilyCrate({ apiData, onLogout }) {
 
   const setView=v=>{
     setView_(v);
+    // Lock settings when navigating away
+    if(v!=="settings") setPinUnlocked(false);
     if(v==="points"){
       const approvedIds=redeemReqs.filter(r=>r.status==="approved").map(r=>r.id);
       localStorage.setItem("fc_seen_rewards",JSON.stringify(approvedIds));
@@ -1041,9 +1043,16 @@ function FamilyCrate({ apiData, onLogout }) {
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
     const onFocus=()=>refreshData();
+    const onVisibility=()=>{
+      if(document.visibilityState==="visible") refreshData();
+      else setPinUnlocked(false); // Lock when app goes to background
+    };
     window.addEventListener("focus",onFocus);
-    document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") refreshData(); });
-    return()=>window.removeEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",onVisibility);
+    return()=>{
+      window.removeEventListener("focus",onFocus);
+      document.removeEventListener("visibilitychange",onVisibility);
+    };
   },[]);
   useEffect(()=>{ if(!gridScrollRef.current) return; const top=minutesToTop(Math.max(nowMins-60,DAY_START))-20; gridScrollRef.current.scrollTop=Math.max(0,top); },[selDate,dayView]);
   useEffect(()=>{ const g=gridScrollRef.current,h=colHdrsRef.current; if(!g||!h) return; const fn=()=>{h.scrollLeft=g.scrollLeft;}; g.addEventListener("scroll",fn,{passive:true}); return()=>g.removeEventListener("scroll",fn); },[dayView,selDate]);
@@ -1263,7 +1272,7 @@ function FamilyCrate({ apiData, onLogout }) {
               <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
               {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
-              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:20,height:20,borderRadius:5,fontSize:11,top:4,right:4}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
+              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:17,height:17,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
             </div>
           );
         })}
@@ -1449,7 +1458,7 @@ function FamilyCrate({ apiData, onLogout }) {
                               <div className="tblock-title" style={{color:block.color,fontSize:10,paddingRight:block.kind==="item"?18:0}}>{block.title}</div>
                               {block.height>26&&<div className="tblock-time" style={{color:block.color,fontSize:8}}>{block.time}</div>}
                               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color,fontSize:8}}>{block.note}</div>}
-                              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:18,height:18,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
+                              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:17,height:17,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
                             </div>
                           );})}
                         </div>
@@ -1683,7 +1692,7 @@ function FamilyCrate({ apiData, onLogout }) {
         </nav>
       </div>
 
-      {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);}} onClose={()=>setViewModal(null)}/>}
+      {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{const doEdit=()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);};if(!parentPin){setPinModal("setup");}else if(!pinUnlocked){setPinModal("enter");}else{doEdit();}}} onClose={()=>setViewModal(null)}/>}
       {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
       {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
       {mModal&&<MemberModal member={mModal.member} onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}} onDelete={()=>{delMember(mModal.member.id);setMModal(null);}} onClose={()=>setMModal(null)}/>}
