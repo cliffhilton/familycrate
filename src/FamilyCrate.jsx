@@ -1263,7 +1263,7 @@ function FamilyCrate({ apiData, onLogout }) {
               <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
               {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
-              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:20,height:20,borderRadius:5,fontSize:11,top:4,right:4}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>
+              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:20,height:20,borderRadius:5,fontSize:11,top:4,right:4}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
             </div>
           );
         })}
