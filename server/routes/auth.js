@@ -7,7 +7,7 @@ const router = express.Router();
 // ── Register a new family ─────────────────────────────────────────────────────
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, familyName, parentName } = req.body;
+    const { email, password, familyName, parentName, familyEmail } = req.body;
     if (!email || !password || !familyName || !parentName) {
       return res.status(400).json({ error: "All fields required" });
     }
@@ -34,6 +34,8 @@ router.post("/register", async (req, res) => {
       id: userId,
       family_name: familyName,
       owner_email: email,
+      family_email: familyEmail||null,
+      family_email: familyEmail||null,
       stripe_customer_id: customer.id,
       subscription_status: "trialing",
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),

@@ -192,6 +192,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
         <div class="field"><label>Family name</label><input type="text" id="familyName" placeholder="e.g. The Johnson Family"/><div class="field-hint">Shown at the top of your app</div></div>
         <div class="field"><label>Email address</label><input type="email" id="email" placeholder="your@email.com" autocomplete="email"/></div>
         <div class="field"><label>Password</label><input type="password" id="password" placeholder="8+ characters" autocomplete="new-password"/></div>
+        <div class="field">
+          <label>Family email <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px;">(optional)</span></label>
+          <input type="email" id="familyEmail" placeholder="family@email.com" autocomplete="email"/>
+          <div class="field-hint">A shared inbox kids can use to log in — helpful if they don't have their own email yet</div>
+        </div>
         <button class="btn-pri" onclick="goStep2()">Continue →</button>
         <div class="login-link">Already have an account? <a href="/login">Sign in</a></div>
       </div>
@@ -392,6 +397,7 @@ async function createAccount() {
     familyName: document.getElementById('familyName').value.trim(),
     email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
+    familyEmail: document.getElementById('familyEmail').value.trim()||undefined,
     members,
   };
   try {
