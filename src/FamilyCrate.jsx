@@ -574,6 +574,44 @@ function ModalWrap({ children, onClose }) {
 }
 
 // ─── Item Modal ───────────────────────────────────────────────────────────────
+function ViewModal({ item, event, members, memberId, ds, isDone, onToggle, onEdit, onClose }) {
+  const color = item ? (members.find(m=>m.id===memberId)?.color||"#3A6A88") : (event?.color||"#6A7A8A");
+  const done = item && isDone;
+  return (
+    <ModalWrap onClose={onClose}>
+      <div className="modal" style={{gap:14}}>
+        <div className="mhandle"/>
+        {item && (<>
+          <div style={{display:"flex",alignItems:"flex-start",gap:12}}>
+            <button onClick={onToggle} style={{width:40,height:40,borderRadius:10,border:`2.5px solid ${done?color:"var(--bdr)"}`,background:done?color:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
+              {done&&<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            </button>
+            <div style={{flex:1}}>
+              <div style={{fontSize:18,fontWeight:600,color:"var(--ink)",textDecoration:done?"line-through":"none",opacity:done?.6:1}}>{item.text}</div>
+              {item.time&&<div style={{fontSize:13,color:"var(--muted)",marginTop:3}}>{item.time}{item.duration?" · "+item.duration+"min":""}</div>}
+            </div>
+          </div>
+          {item.note&&<div style={{background:"var(--gold-lt)",border:"1px solid var(--gold-bd)",borderRadius:9,padding:"10px 13px",fontSize:13,color:"#8A6A20",fontStyle:"italic"}}>{item.note}</div>}
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {item.assignedTo.length>0?item.assignedTo.map(id=>{const m=members.find(x=>x.id===id);return m?(<div key={id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 6px",borderRadius:100,background:m.color+"18",border:"1.5px solid "+m.color+"40",fontSize:12,color:m.color,fontWeight:500}}><div style={{width:18,height:18,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:700,color:"#fff"}}>{m.name.slice(0,2).toUpperCase()}</div>{m.name}</div>):null;}):<div style={{fontSize:12,color:"var(--muted)"}}>Anyone</div>}
+            {item.points>0&&<div style={{padding:"4px 10px",borderRadius:100,background:"var(--gold-lt)",border:"1px solid var(--gold-bd)",fontSize:12,color:"var(--gold)",fontWeight:600}}>{item.points} pts</div>}
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="mbtn-ghost" onClick={onClose}>Close</button><button className="mbtn-pri" onClick={onEdit}>Edit</button></div>
+        </>)}
+        {event && (<>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:12,height:12,borderRadius:"50%",background:color,flexShrink:0}}/>
+            <div style={{fontSize:18,fontWeight:600,color:"var(--ink)"}}>{event.title}</div>
+          </div>
+          {event.time&&<div style={{fontSize:13,color:"var(--muted)"}}>{event.time}{event.duration?" · "+event.duration+"min":""}</div>}
+          {event.memberIds?.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6}}>{event.memberIds.map(id=>{const m=members.find(x=>x.id===id);return m?(<div key={id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 6px",borderRadius:100,background:m.color+"18",border:"1.5px solid "+m.color+"40",fontSize:12,color:m.color,fontWeight:500}}><div style={{width:18,height:18,borderRadius:"50%",background:m.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:700,color:"#fff"}}>{m.name.slice(0,2).toUpperCase()}</div>{m.name}</div>):null;})}</div>}
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="mbtn-ghost" onClick={onClose}>Close</button><button className="mbtn-pri" onClick={onEdit}>Edit</button></div>
+        </>)}
+      </div>
+    </ModalWrap>
+  );
+}
+
 function ItemModal({ item, members, prefill, categories, onSave, onDelete, onClose }) {
   const [text,setText]   = useState(item?.text??"");
   const [pts,setPts]     = useState(String(item?.points??5));
@@ -976,6 +1014,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [listTab,setListTab]     = useState(()=>{ const cats=apiData?.categories?.length?apiData.categories:INIT_CATEGORIES; return cats[0]?.id||"chores"; });
   const [listFmid,setListFmid]   = useState(null);
   const [iModal,setIModal]       = useState(null);
+  const [viewModal,setViewModal]   = useState(null);
   const [eModal,setEModal]       = useState(null);
   const [mModal,setMModal]       = useState(null);
   const [rwModal,setRwModal]     = useState(null);
@@ -1220,11 +1259,11 @@ function FamilyCrate({ apiData, onLogout }) {
             <div key={block.id} className="tblock"
               style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 2px)`,width:`calc(${widthPct}% - 4px)`,minWidth:20,background:`${block.color}28`,borderLeftColor:block.color,opacity:isDraggingThis?.4:1,cursor:block.kind==="item"?"grab":"pointer",zIndex:block.col+1}}
               onMouseDown={block.kind==="item"?e=>onMouseDown(e,block,m.id):undefined}
-              onClick={()=>{if(block.kind==="event") setEModal({event:events.find(e=>e.id===block.evId)});else setIModal({item:items.find(i=>i.id===block.itemId)});}}>
-              <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?16:0}}>{block.title}</div>
+              onClick={()=>{if(block.kind==="event") setViewModal({event:events.find(e=>e.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:m.id,ds});}}>
+              <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
               {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
-              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
+              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:20,height:20,borderRadius:5,fontSize:11,top:4,right:4}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>
             </div>
           );
         })}
@@ -1406,11 +1445,11 @@ function FamilyCrate({ apiData, onLogout }) {
                       return (
                         <div key={ds} className="pcol" style={{height:totalGridHeight,position:"relative",flex:"1",minWidth:showWeekends?80:110}} onClick={e=>{if(e.target===e.currentTarget){setSelDate(ds);setDayView("day");}}}>
                           {laid.map(block=>{const n2=Math.min(block.totalCols,3),colW2=1/n2,leftPct=block.col*colW2*100,widthPct=colW2*100;return(
-                            <div key={block.id} className="tblock" style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 1px)`,width:`calc(${widthPct}% - 3px)`,background:`${block.color}22`,borderLeftColor:block.color,zIndex:block.col+1}} onClick={e=>{e.stopPropagation();if(block.kind==="event") setEModal({event:events.find(ev=>ev.id===block.evId)});else setIModal({item:items.find(i=>i.id===block.itemId)});}}>
-                              <div className="tblock-title" style={{color:block.color,fontSize:10}}>{block.title}</div>
+                            <div key={block.id} className="tblock" style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 1px)`,width:`calc(${widthPct}% - 3px)`,background:`${block.color}22`,borderLeftColor:block.color,zIndex:block.col+1}} onClick={e=>{e.stopPropagation();if(block.kind==="event") setViewModal({event:events.find(ev=>ev.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:block.memberId,ds});}}>
+                              <div className="tblock-title" style={{color:block.color,fontSize:10,paddingRight:block.kind==="item"?18:0}}>{block.title}</div>
                               {block.height>26&&<div className="tblock-time" style={{color:block.color,fontSize:8}}>{block.time}</div>}
                               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color,fontSize:8}}>{block.note}</div>}
-                              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:11,height:11,fontSize:7,top:2,right:2}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
+                              {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:18,height:18,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
                             </div>
                           );})}
                         </div>
@@ -1644,6 +1683,7 @@ function FamilyCrate({ apiData, onLogout }) {
         </nav>
       </div>
 
+      {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);}} onClose={()=>setViewModal(null)}/>}
       {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
       {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
       {mModal&&<MemberModal member={mModal.member} onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}} onDelete={()=>{delMember(mModal.member.id);setMModal(null);}} onClose={()=>setMModal(null)}/>}
