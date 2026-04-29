@@ -588,7 +588,7 @@ function ViewModal({ item, event, members, memberId, ds, isDone, onToggle, onEdi
             </button>
             <div style={{flex:1}}>
               <div style={{fontSize:18,fontWeight:600,color:"var(--ink)",textDecoration:done?"line-through":"none",opacity:done?.6:1}}>{item.text}</div>
-              {item.time&&<div style={{fontSize:13,color:"var(--muted)",marginTop:3}}>{item.time}{item.duration?" · "+item.duration+"min":""}</div>}
+              {item.time&&<div style={{fontSize:13,color:"var(--muted)",marginTop:3}}>{item.time}{item.duration?" · "+item.duration+"min":""}{item.repeat&&item.repeat!=="none"&&<span style={{marginLeft:6,fontSize:11,background:"var(--sky-lt)",color:"var(--sky)",borderRadius:4,padding:"1px 6px",fontWeight:500}}>{{daily:"Every day","weekly-dow":"Every week",monthly:"Every month"}[item.repeat]||item.repeat}</span>}</div>}
             </div>
           </div>
           {item.note&&<div style={{background:"var(--gold-lt)",border:"1px solid var(--gold-bd)",borderRadius:9,padding:"10px 13px",fontSize:13,color:"#8A6A20",fontStyle:"italic"}}>{item.note}</div>}
