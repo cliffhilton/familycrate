@@ -974,21 +974,25 @@ function FamilyCrate({ apiData, onLogout }) {
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
   const [view,setView_]          = useState("home");
-  const refreshData=()=>apiGetFamily().then(data=>{
+  const refreshDataRef = useRef(null);
+  const isRealtimeRef = useRef(false);
+  const refreshData=(fromRealtime=false)=>apiGetFamily().then(data=>{
     if(data.members?.length) setMR(data.members);
     if(data.items?.length) setIR(data.items);
     if(data.events?.length) setER(data.events);
     if(data.rewards?.length) setRwR(data.rewards);
-    if(data.doneLog) setDLR(data.doneLog);
+    if(data.doneLog&&!isRealtimeRef.current) setDLR(data.doneLog);
     if(data.redeemReqs) setRRR(prev=>{
       const dbIds=new Set(data.redeemReqs.map(r=>r.id));
       const localOnly=prev.filter(r=>!dbIds.has(r.id));
       return [...data.redeemReqs,...localOnly];
     });
-    // spentPoints not refreshed to avoid race with approve writes
+    if(data.spentPoints) setSPR(prev=>({...prev,...data.spentPoints}));
     if(data.categories?.length) setCatsR(data.categories);
     if(data.rate) setRateR(data.rate);
   }).catch(()=>{});
+
+  refreshDataRef.current = refreshData;
 
   const setView=v=>{
     setView_(v);
@@ -1054,12 +1058,12 @@ function FamilyCrate({ apiData, onLogout }) {
     const familyId=localStorage.getItem("fc_family_id");
     if(!familyId||!window._supabaseClient) return;
     const ch=window._supabaseClient.channel("fc-"+familyId)
-      .on("postgres_changes",{event:"*",schema:"public",table:"done_log",filter:`family_id=eq.${familyId}`},()=>refreshData())
-      .on("postgres_changes",{event:"*",schema:"public",table:"items",filter:`family_id=eq.${familyId}`},()=>refreshData())
-      .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},()=>refreshData())
-      .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},()=>refreshData())
-      .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},()=>refreshData())
-      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"done_log",filter:`family_id=eq.${familyId}`},()=>{isRealtimeRef.current=true;refreshDataRef.current?.();setTimeout(()=>{isRealtimeRef.current=false;},2000);})
+      .on("postgres_changes",{event:"*",schema:"public",table:"items",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
+      .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
+      .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
+      .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
+      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.()
       .subscribe();
     return()=>ch.unsubscribe();
   },[]);
