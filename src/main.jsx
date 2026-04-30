@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import './supabase.js'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import AppShell from './FamilyCrate.jsx'

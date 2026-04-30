@@ -1042,17 +1042,26 @@ function FamilyCrate({ apiData, onLogout }) {
 
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
-    const onFocus=()=>refreshData();
     const onVisibility=()=>{
       if(document.visibilityState==="visible") refreshData();
-      else setPinUnlocked(false); // Lock when app goes to background
+      else setPinUnlocked(false);
     };
-    window.addEventListener("focus",onFocus);
     document.addEventListener("visibilitychange",onVisibility);
-    return()=>{
-      window.removeEventListener("focus",onFocus);
-      document.removeEventListener("visibilitychange",onVisibility);
-    };
+    return()=>document.removeEventListener("visibilitychange",onVisibility);
+  },[]);
+
+  useEffect(()=>{
+    const familyId=localStorage.getItem("fc_family_id");
+    if(!familyId||!window._supabaseClient) return;
+    const ch=window._supabaseClient.channel("fc-"+familyId)
+      .on("postgres_changes",{event:"*",schema:"public",table:"done_log",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"items",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshData())
+      .subscribe();
+    return()=>ch.unsubscribe();
   },[]);
   useEffect(()=>{ if(!gridScrollRef.current) return; const top=minutesToTop(Math.max(nowMins-60,DAY_START))-20; gridScrollRef.current.scrollTop=Math.max(0,top); },[selDate,dayView]);
   useEffect(()=>{ const g=gridScrollRef.current,h=colHdrsRef.current; if(!g||!h) return; const fn=()=>{h.scrollLeft=g.scrollLeft;}; g.addEventListener("scroll",fn,{passive:true}); return()=>g.removeEventListener("scroll",fn); },[dayView,selDate]);
