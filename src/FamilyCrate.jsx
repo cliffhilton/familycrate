@@ -1063,7 +1063,7 @@ function FamilyCrate({ apiData, onLogout }) {
       .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
       .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
       .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.()
+      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
       .subscribe();
     return()=>ch.unsubscribe();
   },[]);
