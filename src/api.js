@@ -190,3 +190,8 @@ export async function apiUpdateSettings(data)    { return req("PUT",    "/api/fa
 export async function apiCheckoutSession()       { return req("POST",   "/api/stripe/checkout"); }
 export async function apiBillingPortal()         { return req("POST",   "/api/stripe/portal"); }
 export async function apiSubscriptionStatus()    { return req("GET",    "/api/stripe/status"); }
+
+// ─── Google Calendar ──────────────────────────────────────────────────────────
+export async function apiGoogleAuthUrl()    { return req("GET",  "/api/google/auth"); }
+export async function apiGoogleEvents()     { return req("GET",  "/api/google/events"); }
+export async function apiGoogleDisconnect() { return req("DELETE","/api/google/disconnect"); }

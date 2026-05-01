@@ -8,6 +8,7 @@ import {
   apiAddReward, apiUpdateReward, apiDeleteReward,
   apiRedeem, apiApproveRedeem, apiDeclineRedeem,
   apiUpdateSettings,
+  apiGoogleAuthUrl, apiGoogleEvents, apiGoogleDisconnect,
 } from "./api.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1029,6 +1030,8 @@ function FamilyCrate({ apiData, onLogout }) {
   const [pinModal,setPinModal]       = useState(null);
   const [parentPin,setParentPin]     = useState(()=>localStorage.getItem("fc_pin")||"");
   const [pinUnlocked,setPinUnlocked] = useState(false);
+  const [googleEvents,setGoogleEvents] = useState([]);
+  const [googleConnected,setGoogleConnected] = useState(false);
   const [seenRewards,setSeenRewards] = useState(()=>{ try{return JSON.parse(localStorage.getItem("fc_seen_rewards")||"[]");}catch{return[];} });
   const [aText,setAText]         = useState("");
   const [aPts,setAPts]           = useState("5");
@@ -1044,6 +1047,7 @@ function FamilyCrate({ apiData, onLogout }) {
   // touchStartPos ref declared near onTouchStart
   const isMobile       = typeof window!=="undefined" && window.innerWidth<=660;
 
+  useEffect(()=>{ apiGoogleEvents().then(r=>{ setGoogleConnected(r.connected); setGoogleEvents(r.events||[]); }).catch(()=>{}); },[]);
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
     const onVisibility=()=>{
@@ -1077,7 +1081,12 @@ function FamilyCrate({ apiData, onLogout }) {
   const cells=[]; for(let i=fd-1;i>=0;i--) cells.push({d:pmd-i,cur:false}); for(let d=1;d<=dim;d++) cells.push({d,cur:true}); while(cells.length%7!==0) cells.push({d:cells.length-dim-fd+1,cur:false});
   const toCellDate=c=>c.cur?`${yr}-${String(mo+1).padStart(2,"0")}-${String(c.d).padStart(2,"0")}`:null;
 
-  const eventsOnDate=useCallback(ds=>{const seen=new Set();return events.filter(ev=>{if(!eventAppearsOn(ev,ds))return false;if(seen.has(ev.id))return false;seen.add(ev.id);return true;});},[events]);
+  const eventsOnDate=useCallback(ds=>{
+    const seen=new Set();
+    const local=events.filter(ev=>{if(!eventAppearsOn(ev,ds))return false;if(seen.has(ev.id))return false;seen.add(ev.id);return true;});
+    const gcal=googleEvents.filter(ev=>ev.date===ds);
+    return [...local,...gcal];
+  },[events,googleEvents]);
   const itemsForMemberOnDate=useCallback((mid,ds)=>items.filter(it=>(it.assignedTo.length===0||it.assignedTo.includes(mid))&&appearsOnDate(it,ds)),[items]);
   const isDone=(itemId,memberId,ds)=>!!doneLog[doneKey(itemId,memberId,ds)];
   const toggleDone=(itemId,memberId,ds)=>{
@@ -1684,9 +1693,15 @@ function FamilyCrate({ apiData, onLogout }) {
                 <div className="set-row-lbl">Subscription</div>
                 <a href="/subscription.html" style={{fontSize:12,color:"var(--sky)",textDecoration:"none",fontWeight:500}}>Manage</a>
               </div>
-              <div className="set-row" style={{opacity:.5}}>
-                <div className="set-row-lbl">Google Calendar sync</div>
-                <span style={{fontSize:12,color:"var(--muted)"}}>Coming soon</span>
+              <div className="set-row">
+                <div>
+                  <div className="set-row-lbl">Google Calendar</div>
+                  <div className="set-row-sub">{googleConnected?"Daily Life calendar connected":"Connect to show Google events"}</div>
+                </div>
+                {googleConnected
+                  ? <button onClick={()=>apiGoogleDisconnect().then(()=>{setGoogleConnected(false);setGoogleEvents([]);})} style={{padding:"5px 10px",borderRadius:7,border:"1.5px solid #CC3A3A",background:"none",color:"#CC3A3A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Disconnect</button>
+                  : <button onClick={()=>apiGoogleAuthUrl().then(r=>{window.location.href=r.url;})} style={{padding:"5px 10px",borderRadius:7,border:"none",background:"var(--sky)",color:"#fff",fontFamily:"DM Sans,sans-serif",fontSize:12,fontWeight:500,cursor:"pointer"}}>Connect</button>
+                }
               </div>
               <button className="sign-out-btn" onClick={onLogout}>Sign out</button>
             </div>

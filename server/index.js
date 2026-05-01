@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import familyRoutes from "./routes/family.js";
 import stripeRoutes from "./routes/stripe.js";
+import googleRoutes from "./routes/google.js";
 import webhookRoutes from "./routes/webhooks.js";
 import notifyRoutes from "./routes/notify.js";
 import { fileURLToPath } from "url";
@@ -57,6 +58,7 @@ app.get("/health", (req, res) => res.json({ status: "ok", app: "FamilyCrate" }))
 app.use("/api/auth",   authRoutes);
 app.use("/api/family", familyRoutes);
 app.use("/api/stripe", stripeRoutes);
+app.use("/api/google", googleRoutes);
 app.use("/api/notify", notifyRoutes);
 
 // 404
