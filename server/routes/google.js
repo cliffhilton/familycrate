@@ -78,18 +78,35 @@ router.get("/events", requireAuth, async (req, res) => {
       maxResults: 100,
     });
 
-    const events = (eventsRes.data.items || []).map(ev => ({
-      id: "gc_" + ev.id,
-      title: ev.summary || "Untitled",
-      date: ev.start?.date || ev.start?.dateTime?.slice(0, 10),
-      time: ev.start?.dateTime ? new Date(ev.start.dateTime).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "",
-      duration: ev.start?.dateTime && ev.end?.dateTime ? Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000) : 60,
-      color: "#4A90D9",
-      memberIds: [],
-      repeat: "none",
-      type: "google",
-      source: "google",
-    }));
+    const tz = eventsRes.data.timeZone || "America/New_York";
+    const events = (eventsRes.data.items || []).map(ev => {
+      const startDT = ev.start?.dateTime;
+      const endDT = ev.end?.dateTime;
+      const startDate = ev.start?.date;
+      // Use event timezone for display
+      const timeStr = startDT ? new Date(startDT).toLocaleTimeString("en-US", {
+        hour: "numeric", minute: "2-digit", hour12: true,
+        timeZone: ev.start?.timeZone || tz
+      }) : "";
+      const dateStr = startDT
+        ? new Date(startDT).toLocaleDateString("en-CA", { timeZone: ev.start?.timeZone || tz })
+        : startDate;
+      const duration = startDT && endDT
+        ? Math.round((new Date(endDT) - new Date(startDT)) / 60000)
+        : 60;
+      return {
+        id: "gc_" + ev.id,
+        title: ev.summary || "Untitled",
+        date: dateStr,
+        time: timeStr,
+        duration,
+        color: "#4A90D9",
+        memberIds: [],
+        repeat: "none",
+        type: "google",
+        source: "google",
+      };
+    });
 
     res.json({ connected: true, events });
   } catch (err) {
