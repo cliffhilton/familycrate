@@ -1070,14 +1070,67 @@ function FamilyCrate({ apiData, onLogout }) {
   useEffect(()=>{
     const familyId=localStorage.getItem("fc_family_id");
     if(!familyId||!window._supabaseClient) return;
+
     const ch=window._supabaseClient.channel("fc-"+familyId)
-      .on("postgres_changes",{event:"*",schema:"public",table:"done_log",filter:`family_id=eq.${familyId}`},()=>{isRealtimeRef.current=true;refreshDataRef.current?.();setTimeout(()=>{isRealtimeRef.current=false;},2000);})
-      .on("postgres_changes",{event:"*",schema:"public",table:"items",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},()=>refreshDataRef.current?.())
-      .subscribe();
+      // done_log: apply directly to state — most frequent change
+      .on("postgres_changes",{event:"*",schema:"public",table:"done_log",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="DELETE") return;
+        const {key,done} = payload.new;
+        setDLR(prev=>({...prev,[key]:done}));
+      })
+      // items: full refresh but debounced
+      .on("postgres_changes",{event:"*",schema:"public",table:"items",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="INSERT") setIR(prev=>{
+          const exists=prev.find(i=>i.id===payload.new.id);
+          if(exists) return prev;
+          const item={...payload.new,assignedTo:payload.new.assigned_to||[],startDate:payload.new.start_date,date:payload.new.date};
+          return [...prev,item];
+        });
+        else if(payload.eventType==="UPDATE") setIR(prev=>prev.map(i=>i.id===payload.new.id?{...i,...payload.new,assignedTo:payload.new.assigned_to||[],startDate:payload.new.start_date}:i));
+        else if(payload.eventType==="DELETE") setIR(prev=>prev.filter(i=>i.id!==payload.old.id));
+      })
+      // events
+      .on("postgres_changes",{event:"*",schema:"public",table:"events",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="INSERT") setER(prev=>{
+          const exists=prev.find(e=>e.id===payload.new.id);
+          if(exists) return prev;
+          const ev={...payload.new,memberIds:payload.new.member_ids||[],startDate:payload.new.start_date};
+          return [...prev,ev];
+        });
+        else if(payload.eventType==="UPDATE") setER(prev=>prev.map(e=>e.id===payload.new.id?{...e,...payload.new,memberIds:payload.new.member_ids||[],startDate:payload.new.start_date}:e));
+        else if(payload.eventType==="DELETE") setER(prev=>prev.filter(e=>e.id!==payload.old.id));
+      })
+      // redeem_requests
+      .on("postgres_changes",{event:"*",schema:"public",table:"redeem_requests",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="INSERT"){
+          const req={...payload.new,memberId:payload.new.member_id,rewardId:payload.new.reward_id,pts:payload.new.points};
+          setRRR(prev=>{if(prev.find(r=>r.id===req.id))return prev;return [...prev,req];});
+        } else if(payload.eventType==="UPDATE"){
+          setRRR(prev=>prev.map(r=>r.id===payload.new.id?{...r,...payload.new,memberId:payload.new.member_id,rewardId:payload.new.reward_id,pts:payload.new.points}:r));
+          // If approved, update spentPoints
+          if(payload.new.status==="approved"){
+            const mid=payload.new.member_id;
+            const pts=payload.new.points||0;
+            setSPR(prev=>({...prev,[mid]:(prev[mid]||0)+pts}));
+          }
+        }
+      })
+      // members
+      .on("postgres_changes",{event:"*",schema:"public",table:"members",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="INSERT") setMR(prev=>{if(prev.find(m=>m.id===payload.new.id))return prev;return [...prev,payload.new];});
+        else if(payload.eventType==="UPDATE") setMR(prev=>prev.map(m=>m.id===payload.new.id?{...m,...payload.new}:m));
+        else if(payload.eventType==="DELETE") setMR(prev=>prev.filter(m=>m.id!==payload.old.id));
+      })
+      // rewards
+      .on("postgres_changes",{event:"*",schema:"public",table:"rewards",filter:`family_id=eq.${familyId}`},(payload)=>{
+        if(payload.eventType==="INSERT") setRwR(prev=>{if(prev.find(r=>r.id===payload.new.id))return prev;return [...prev,payload.new];});
+        else if(payload.eventType==="UPDATE") setRwR(prev=>prev.map(r=>r.id===payload.new.id?{...r,...payload.new}:r));
+        else if(payload.eventType==="DELETE") setRwR(prev=>prev.filter(r=>r.id!==payload.old.id));
+      })
+      .subscribe((status)=>{
+        console.log("Realtime status:", status);
+      });
+
     return()=>ch.unsubscribe();
   },[]);
   useEffect(()=>{ if(!gridScrollRef.current) return; const top=minutesToTop(Math.max(nowMins-60,DAY_START))-20; gridScrollRef.current.scrollTop=Math.max(0,top); },[selDate,dayView]);
