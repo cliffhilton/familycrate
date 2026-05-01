@@ -49,7 +49,7 @@ router.get("/callback", async (req, res) => {
 
 router.get("/events", requireAuth, async (req, res) => {
   try {
-    const { data: family } = await supabase.from("families").select("google_tokens").eq("id", req.familyId).single();
+    const { data: family } = await supabase.from("families").select("google_tokens, google_calendar_id").eq("id", req.familyId).single();
     if (!family?.google_tokens) return res.json({ connected: false, events: [] });
 
     const oauth2 = getOAuth2Client();
@@ -65,12 +65,11 @@ router.get("/events", requireAuth, async (req, res) => {
     const future = new Date();
     future.setDate(future.getDate() + 30);
 
-    const calList = await calendar.calendarList.list();
-    const dailyLife = calList.data.items?.find(c => c.summary?.toLowerCase().includes("daily life"));
-    if (!dailyLife) return res.json({ connected: true, events: [], error: "Daily Life calendar not found" });
+    // Use stored calendar ID or fall back to primary
+    const calendarId = family.google_calendar_id || "primary";
 
     const eventsRes = await calendar.events.list({
-      calendarId: dailyLife.id,
+      calendarId,
       timeMin: now.toISOString(),
       timeMax: future.toISOString(),
       singleEvents: true,
@@ -113,6 +112,32 @@ router.get("/events", requireAuth, async (req, res) => {
     console.error("Google Calendar error:", err);
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get("/calendars", requireAuth, async (req, res) => {
+  try {
+    const { data: family } = await supabase.from("families").select("google_tokens").eq("id", req.familyId).single();
+    if (!family?.google_tokens) return res.json({ calendars: [] });
+    const oauth2 = getOAuth2Client();
+    oauth2.setCredentials(family.google_tokens);
+    const calendar = google.calendar({ version: "v3", auth: oauth2 });
+    const calList = await calendar.calendarList.list();
+    const calendars = (calList.data.items || []).map(c => ({
+      id: c.id,
+      name: c.summary,
+      color: c.backgroundColor || "#4A90D9",
+      primary: c.primary || false,
+    }));
+    res.json({ calendars });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/calendar", requireAuth, async (req, res) => {
+  const { calendarId } = req.body;
+  await supabase.from("families").update({ google_calendar_id: calendarId }).eq("id", req.familyId);
+  res.json({ success: true });
 });
 
 router.delete("/disconnect", requireAuth, async (req, res) => {

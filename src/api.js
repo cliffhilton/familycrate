@@ -195,3 +195,5 @@ export async function apiSubscriptionStatus()    { return req("GET",    "/api/st
 export async function apiGoogleAuthUrl()    { return req("GET",  "/api/google/auth"); }
 export async function apiGoogleEvents()     { return req("GET",  "/api/google/events"); }
 export async function apiGoogleDisconnect() { return req("DELETE","/api/google/disconnect"); }
+export async function apiGoogleCalendars()           { return req("GET", "/api/google/calendars"); }
+export async function apiGoogleSetCalendar(calendarId) { return req("PUT", "/api/google/calendar", { calendarId }); }

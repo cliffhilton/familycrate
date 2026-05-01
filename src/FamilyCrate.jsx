@@ -8,7 +8,7 @@ import {
   apiAddReward, apiUpdateReward, apiDeleteReward,
   apiRedeem, apiApproveRedeem, apiDeclineRedeem,
   apiUpdateSettings,
-  apiGoogleAuthUrl, apiGoogleEvents, apiGoogleDisconnect,
+  apiGoogleAuthUrl, apiGoogleEvents, apiGoogleDisconnect, apiGoogleCalendars, apiGoogleSetCalendar,
 } from "./api.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1032,6 +1032,8 @@ function FamilyCrate({ apiData, onLogout }) {
   const [pinUnlocked,setPinUnlocked] = useState(false);
   const [googleEvents,setGoogleEvents] = useState([]);
   const [googleConnected,setGoogleConnected] = useState(false);
+  const [calPickerOpen,setCalPickerOpen] = useState(false);
+  const [calPickerList,setCalPickerList] = useState([]);
   const [seenRewards,setSeenRewards] = useState(()=>{ try{return JSON.parse(localStorage.getItem("fc_seen_rewards")||"[]");}catch{return[];} });
   const [aText,setAText]         = useState("");
   const [aPts,setAPts]           = useState("5");
@@ -1047,7 +1049,14 @@ function FamilyCrate({ apiData, onLogout }) {
   // touchStartPos ref declared near onTouchStart
   const isMobile       = typeof window!=="undefined" && window.innerWidth<=660;
 
-  useEffect(()=>{ apiGoogleEvents().then(r=>{ setGoogleConnected(r.connected); setGoogleEvents(r.events||[]); }).catch(()=>{}); },[]);
+  useEffect(()=>{
+    apiGoogleEvents().then(r=>{ setGoogleConnected(r.connected); setGoogleEvents(r.events||[]); }).catch(()=>{});
+    // Check if returning from Google OAuth
+    if(window.location.search.includes("gc=success")){
+      apiGoogleCalendars().then(r=>{ setCalPickerList(r.calendars||[]); setCalPickerOpen(true); }).catch(()=>{});
+      window.history.replaceState({},"",window.location.pathname);
+    }
+  },[]);
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
     const onVisibility=()=>{
@@ -1730,6 +1739,32 @@ function FamilyCrate({ apiData, onLogout }) {
       {rwModal&&<RewardModal reward={rwModal.reward} onSave={p=>{saveReward(rwModal.reward?.id,p);setRwModal(null);}} onDelete={()=>{delReward(rwModal.reward.id);setRwModal(null);}} onClose={()=>setRwModal(null)}/>}
       {rdModal&&<RedeemModal reward={rdModal.reward} members={members} earnedInPeriod={earnedInPeriod} spentPoints={spentPoints} onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}} onClose={()=>setRdModal(null)}/>}
       {confirmModal&&<ConfirmModal title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onClose={()=>setConfirmModal(null)}/>}
+      {calPickerOpen&&(
+        <div className="ov" onMouseDown={e=>e.target===e.currentTarget&&setCalPickerOpen(false)}>
+          <div className="modal">
+            <div className="mhandle"/>
+            <div className="mtitle">Choose a Google Calendar</div>
+            <div style={{fontSize:13,color:"var(--muted)"}}>Pick which calendar to show in FamilyCrate</div>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {calPickerList.map(cal=>(
+                <button key={cal.id} onClick={()=>{
+                  apiGoogleSetCalendar(cal.id).then(()=>{
+                    setCalPickerOpen(false);
+                    apiGoogleEvents().then(r=>{setGoogleConnected(r.connected);setGoogleEvents(r.events||[]);});
+                  });
+                }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:"1.5px solid var(--bdr)",background:"var(--surf)",cursor:"pointer",textAlign:"left",fontFamily:"DM Sans,sans-serif"}}>
+                  <div style={{width:12,height:12,borderRadius:"50%",background:cal.color,flexShrink:0}}/>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:500,color:"var(--ink)"}}>{cal.name}</div>
+                    {cal.primary&&<div style={{fontSize:11,color:"var(--muted)"}}>Primary calendar</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="mact"><button className="mbtn-ghost" onClick={()=>setCalPickerOpen(false)}>Cancel</button></div>
+          </div>
+        </div>
+      )}
       {pinModal&&<PinModal isSetup={pinModal==="setup"} currentPin={parentPin} onSuccess={pin=>{if(pinModal==="setup"){localStorage.setItem("fc_pin",pin);setParentPin(pin);}setPinUnlocked(true);setPinModal(null);setView_("settings");}} onClose={()=>setPinModal(null)}/>}
     </>
   );
