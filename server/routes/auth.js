@@ -41,28 +41,17 @@ router.post("/register", async (req, res) => {
     });
     if (dbError) return res.status(500).json({ error: dbError.message });
 
-    // 4. Create initial admin member
-    await supabase.from("members").insert({
-      family_id: userId,
-      name: parentName,
-      color: "#8A6A50",
-      role: "admin",
-      email,
-    });
-
-    // 5. Create additional family members from onboarding
-    if (extraMembers?.length) {
-      const toInsert = extraMembers
-        .filter(m => m.name && m.name !== parentName)
-        .map(m => ({
+    // 4. Create all family members from onboarding (includes parent)
+    const membersToInsert = extraMembers?.length
+      ? extraMembers.map((m, i) => ({
           family_id: userId,
           name: m.name,
-          color: m.color || "#3A6A88",
-          role: m.role || "member",
+          color: m.color || "#8A6A50",
+          role: i === 0 ? "admin" : (m.role || "member"),
           email: m.email || null,
-        }));
-      if (toInsert.length) await supabase.from("members").insert(toInsert);
-    }
+        }))
+      : [{ family_id: userId, name: parentName, color: "#8A6A50", role: "admin", email }];
+    await supabase.from("members").insert(membersToInsert);
 
     res.json({ success: true, userId, customerId: customer.id });
 
