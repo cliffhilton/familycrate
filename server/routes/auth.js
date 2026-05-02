@@ -7,7 +7,7 @@ const router = express.Router();
 // ── Register a new family ─────────────────────────────────────────────────────
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, familyName, parentName, familyEmail } = req.body;
+    const { email, password, familyName, parentName, familyEmail, members: extraMembers } = req.body;
     if (!email || !password || !familyName || !parentName) {
       return res.status(400).json({ error: "All fields required" });
     }
@@ -35,7 +35,6 @@ router.post("/register", async (req, res) => {
       family_name: familyName,
       owner_email: email,
       family_email: familyEmail||null,
-      family_email: familyEmail||null,
       stripe_customer_id: customer.id,
       subscription_status: "trialing",
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -50,6 +49,20 @@ router.post("/register", async (req, res) => {
       role: "admin",
       email,
     });
+
+    // 5. Create additional family members from onboarding
+    if (extraMembers?.length) {
+      const toInsert = extraMembers
+        .filter(m => m.name && m.name !== parentName)
+        .map(m => ({
+          family_id: userId,
+          name: m.name,
+          color: m.color || "#3A6A88",
+          role: m.role || "member",
+          email: m.email || null,
+        }));
+      if (toInsert.length) await supabase.from("members").insert(toInsert);
+    }
 
     res.json({ success: true, userId, customerId: customer.id });
 

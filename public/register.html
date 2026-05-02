@@ -398,7 +398,7 @@ async function createAccount() {
     email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
     familyEmail: document.getElementById('familyEmail').value.trim()||undefined,
-    members,
+    members: members.map(m=>({name:m.name,role:m.role,email:m.email||null,color:m.color})),
   };
   try {
     const res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
