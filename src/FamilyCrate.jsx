@@ -1060,7 +1060,21 @@ function FamilyCrate({ apiData, onLogout }) {
   useEffect(()=>{ const t=setInterval(()=>{const n=new Date();setNowMins(n.getHours()*60+n.getMinutes());},60000); return()=>clearInterval(t); },[]);
   useEffect(()=>{
     const onVisibility=()=>{
-      if(document.visibilityState==="visible") refreshData();
+      if(document.visibilityState==="visible"){
+      // Check if a newer build is deployed
+      fetch("/asset-manifest.json?nocache="+Date.now())
+        .then(r=>r.json()).then(m=>{
+          const newHash=m?.files?.["main.js"]||"";
+          const oldHash=localStorage.getItem("fc_build_hash")||"";
+          if(newHash&&oldHash&&newHash!==oldHash){
+            localStorage.setItem("fc_build_hash",newHash);
+            window.location.reload(true);
+          } else {
+            if(newHash) localStorage.setItem("fc_build_hash",newHash);
+            refreshData();
+          }
+        }).catch(()=>refreshData());
+    }
       else setPinUnlocked(false);
     };
     document.addEventListener("visibilitychange",onVisibility);
