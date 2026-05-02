@@ -978,11 +978,11 @@ function FamilyCrate({ apiData, onLogout }) {
   const refreshDataRef = useRef(null);
   const isRealtimeRef = useRef(false);
   const refreshData=(fromRealtime=false)=>apiGetFamily().then(data=>{
-    if(data.members?.length) setMR(data.members);
-    if(data.items?.length) setIR(data.items);
-    if(data.events?.length) setER(data.events);
-    if(data.rewards?.length) setRwR(data.rewards);
-    if(data.doneLog&&!isRealtimeRef.current) setDLR(data.doneLog);
+    if(data.members) setMR(data.members);
+    if(data.items) setIR(data.items);
+    if(data.events) setER(data.events);
+    if(data.rewards) setRwR(data.rewards);
+    if(data.doneLog) setDLR(data.doneLog);
     if(data.redeemReqs) setRRR(prev=>{
       const dbIds=new Set(data.redeemReqs.map(r=>r.id));
       const localOnly=prev.filter(r=>!dbIds.has(r.id));
@@ -1069,7 +1069,10 @@ function FamilyCrate({ apiData, onLogout }) {
 
   useEffect(()=>{
     const familyId=localStorage.getItem("fc_family_id");
-    if(!familyId||!window._supabaseClient) return;
+    if(!familyId) return;
+    // Wait for supabase client to be ready
+    const setup=()=>{
+      if(!window._supabaseClient){ setTimeout(setup,500); return; }
 
     const ch=window._supabaseClient.channel("fc-"+familyId)
       // done_log: apply directly to state — most frequent change
@@ -1130,8 +1133,14 @@ function FamilyCrate({ apiData, onLogout }) {
       .subscribe((status)=>{
         console.log("Realtime status:", status);
       });
-
-    return()=>ch.unsubscribe();
+    };
+    setup();
+    return()=>{
+      const familyId2=localStorage.getItem("fc_family_id");
+      if(window._supabaseClient&&familyId2){
+        window._supabaseClient.removeChannel(window._supabaseClient.channel("fc-"+familyId2));
+      }
+    };
   },[]);
   useEffect(()=>{ if(!gridScrollRef.current) return; const top=minutesToTop(Math.max(nowMins-60,DAY_START))-20; gridScrollRef.current.scrollTop=Math.max(0,top); },[selDate,dayView]);
   useEffect(()=>{ const g=gridScrollRef.current,h=colHdrsRef.current; if(!g||!h) return; const fn=()=>{h.scrollLeft=g.scrollLeft;}; g.addEventListener("scroll",fn,{passive:true}); return()=>g.removeEventListener("scroll",fn); },[dayView,selDate]);
