@@ -5,18 +5,36 @@ function getToken() { return localStorage.getItem("fc_token") || ""; }
 function setToken(t) { localStorage.setItem("fc_token", t); }
 function clearToken() { localStorage.removeItem("fc_token"); localStorage.removeItem("fc_family_id"); }
 
+async function refreshToken() {
+  try {
+    const res = await fetch("/api/auth/refresh", { method: "POST" });
+    const data = await res.json();
+    if (data?.access_token) { setToken(data.access_token); return data.access_token; }
+  } catch(e) {}
+  return null;
+}
+
 async function req(method, path, body) {
-  const res = await fetch(`${BASE}${path}`, {
+  let token = getToken();
+  let res = await fetch(`${BASE}${path}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getToken()}`,
-    },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
     body: body ? JSON.stringify(body) : undefined,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || `Request failed: ${path}`);
-  return data;
+  if (res.status === 401) {
+    const newToken = await refreshToken();
+    if (newToken) {
+      res = await fetch(`${BASE}${path}`, {
+        method,
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${newToken}` },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } else {
+      clearToken(); window.location.href = "/login.html"; return;
+    }
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
 // ─── Field transformers (DB snake_case → app camelCase) ───────────────────────

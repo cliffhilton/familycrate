@@ -120,4 +120,16 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// ── Refresh token ─────────────────────────────────────────────────────────────
+router.post("/refresh", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: token });
+    if (error || !data?.session) return res.status(401).json({ error: "Could not refresh" });
+    res.json({ access_token: data.session.access_token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
