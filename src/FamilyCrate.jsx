@@ -14,7 +14,7 @@ import {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function uid() { return Date.now() + Math.floor(Math.random() * 99999); }
 function getMember(members, id) { return members.find(m => m.id === id) || null; }
-function dateStr(d) { return d.toISOString().slice(0, 10); }
+function dateStr(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function addDays(ds, n) { const d = new Date(ds + "T12:00:00"); d.setDate(d.getDate() + n); return dateStr(d); }
 function startOfWeek(ds) { const d = new Date(ds + "T12:00:00"); d.setDate(d.getDate() - d.getDay()); return dateStr(d); }
 function isoToDisplay(ds, opts) { return new Date(ds + "T12:00:00").toLocaleDateString("en-US", opts || { weekday:"short", month:"short", day:"numeric" }); }
