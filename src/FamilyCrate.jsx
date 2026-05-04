@@ -1709,12 +1709,32 @@ function FamilyCrate({ apiData, onLogout }) {
                 {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
                   <div key={req.id} className="req-card">
                     <div style={{color:"var(--sky)"}}><RewardIcon icon={rw.icon}/></div>
-                    <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts</div></div>
+                    <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div></div>
                     <div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div>
                   </div>
                 );})}
               </div>
             )}
+            {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved").sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
+              <div className="set-sec">
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div className="set-sec-title">Reward Bank</div>
+                    <div className="set-sec-sub">Approved redemptions this period</div>
+                  </div>
+                </div>
+                {approvedReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                  <div key={req.id} className="req-card" style={{opacity:0.85}}>
+                    <div style={{color:"var(--green)"}}><RewardIcon icon={rw.icon}/></div>
+                    <div className="req-body">
+                      <div className="req-name">{rw.title}</div>
+                      <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div>
+                    </div>
+                    <div style={{fontSize:11,fontWeight:600,color:"var(--green)",padding:"4px 8px",background:"#D4EDD4",borderRadius:6}}>✓ Approved</div>
+                  </div>
+                );})}
+              </div>
+            );})()}
             <div className="set-sec">
               <div className="set-sec-title">Family Members</div>
               <div className="set-sec-sub">Tap to edit name, photo, color, or email</div>
