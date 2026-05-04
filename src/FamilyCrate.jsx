@@ -441,6 +441,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .set-page{flex:1 1 0;overflow-y:auto;padding:14px;}
 .set-sec{margin-bottom:20px;}
 .set-sec-title{font-size:15px;font-weight:500;margin-bottom:3px;}
+.set-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+.set-col{display:flex;flex-direction:column;}
+@media(max-width:600px){.set-cols{grid-template-columns:1fr;}}
 .set-sec-sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
 .mer{display:flex;align-items:center;gap:9px;padding:10px 12px;background:var(--surf);border-radius:10px;border:1.5px solid var(--bdr);margin-bottom:5px;cursor:pointer;transition:all .15s;}
 .mer:hover{border-color:var(--sky);}
@@ -1702,41 +1705,11 @@ function FamilyCrate({ apiData, onLogout }) {
         {view==="settings"&&(
           <div className="set-page" onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
             {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30,position:"relative"}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
-            {pendingReqs.length>0&&(
-              <div className="set-sec">
-                <div className="set-sec-title">Reward Requests</div>
-                <div className="set-sec-sub">Approve your kids' reward requests</div>
-                {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
-                  <div key={req.id} className="req-card">
-                    <div style={{color:"var(--sky)"}}><RewardIcon icon={rw.icon}/></div>
-                    <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div></div>
-                    <div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div>
-                  </div>
-                );})}
-              </div>
-            )}
-            {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved").sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
-              <div className="set-sec">
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div>
-                    <div className="set-sec-title">Reward Bank</div>
-                    <div className="set-sec-sub">Approved redemptions this period</div>
-                  </div>
-                </div>
-                {approvedReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
-                  <div key={req.id} className="req-card" style={{opacity:0.85}}>
-                    <div style={{color:"var(--green)"}}><RewardIcon icon={rw.icon}/></div>
-                    <div className="req-body">
-                      <div className="req-name">{rw.title}</div>
-                      <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div>
-                    </div>
-                    <div style={{fontSize:11,fontWeight:600,color:"var(--green)",padding:"4px 8px",background:"#D4EDD4",borderRadius:6}}>✓ Approved</div>
-                  </div>
-                );})}
-              </div>
-            );})()}
-            <div className="set-sec">
-              <div className="set-sec-title">Family Members</div>
+
+            <div className="set-cols">
+              <div className="set-col">
+                <div className="set-sec">
+                  <div className="set-sec-title">Family Members</div>
               <div className="set-sec-sub">Tap to edit name, photo, color, or email</div>
               {members.map(m=>(
                 <div key={m.id} className="mer" onClick={()=>setMModal({member:m})}>
@@ -1772,6 +1745,43 @@ function FamilyCrate({ apiData, onLogout }) {
                 </div>
               ))}
               <button className="add-dashed" onClick={()=>{const id="cat_"+Date.now();setCategories(cs=>[...cs,{id,label:"New List"}]);setListTab(id);}}>+ Add category</button>
+                </div>
+              </div>
+              <div className="set-col">
+                {pendingReqs.length>0&&(
+                  <div className="set-sec">
+                    <div className="set-sec-title">Reward Requests</div>
+                    <div className="set-sec-sub">Approve your kids' reward requests</div>
+                    {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                      <div key={req.id} className="req-card">
+                        <div style={{color:"var(--sky)"}}><RewardIcon icon={rw.icon}/></div>
+                        <div className="req-body"><div className="req-name">{rw.title}</div><div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div></div>
+                        <div className="req-actions"><button className="req-approve" onClick={()=>approveReq(req.id)}>Approve</button><button className="req-decline" onClick={()=>declineReq(req.id)}>Decline</button></div>
+                      </div>
+                    );})}
+                  </div>
+                )}
+                {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved").sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
+                  <div className="set-sec">
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      <div>
+                        <div className="set-sec-title">Reward Bank</div>
+                        <div className="set-sec-sub">Approved redemptions this period</div>
+                      </div>
+                    </div>
+                    {approvedReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                      <div key={req.id} className="req-card" style={{opacity:0.85}}>
+                        <div style={{color:"var(--green)"}}><RewardIcon icon={rw.icon}/></div>
+                        <div className="req-body">
+                          <div className="req-name">{rw.title}</div>
+                          <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div>
+                        </div>
+                        <div style={{fontSize:11,fontWeight:600,color:"var(--green)",padding:"4px 8px",background:"#D4EDD4",borderRadius:6}}>✓ Approved</div>
+                      </div>
+                    );})}
+                  </div>
+                );})()}
+              </div>
             </div>
             <div className="set-sec">
               <div className="set-sec-title">Points & Dollars</div>
