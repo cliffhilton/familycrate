@@ -123,10 +123,14 @@ router.post("/reset-password", async (req, res) => {
 // ── Refresh token ─────────────────────────────────────────────────────────────
 router.post("/refresh", async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token: token });
+    const { refresh_token } = req.body;
+    if (!refresh_token) return res.status(400).json({ error: "No refresh token" });
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
     if (error || !data?.session) return res.status(401).json({ error: "Could not refresh" });
-    res.json({ access_token: data.session.access_token });
+    res.json({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
