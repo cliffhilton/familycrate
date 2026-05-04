@@ -7,9 +7,19 @@ function clearToken() { localStorage.removeItem("fc_token"); localStorage.remove
 
 async function refreshToken() {
   try {
-    const res = await fetch("/api/auth/refresh", { method: "POST" });
+    const rt = localStorage.getItem("fc_refresh_token") || "";
+    if (!rt) return null;
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: rt }),
+    });
     const data = await res.json();
-    if (data?.access_token) { setToken(data.access_token); return data.access_token; }
+    if (data?.access_token) {
+      setToken(data.access_token);
+      if (data.refresh_token) localStorage.setItem("fc_refresh_token", data.refresh_token);
+      return data.access_token;
+    }
   } catch(e) {}
   return null;
 }
