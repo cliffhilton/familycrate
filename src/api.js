@@ -110,6 +110,7 @@ function transformFamily(data) {
 export async function apiLogin(email, password) {
   const data = await req("POST", "/api/auth/login", { email, password });
   setToken(data.session.access_token);
+  if(data.session.refresh_token) localStorage.setItem("fc_refresh_token", data.session.refresh_token);
   localStorage.setItem("fc_family_id", data.family?.id || "");
   return data;
 }
