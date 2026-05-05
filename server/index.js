@@ -34,7 +34,7 @@ app.use(cors({
 app.use(express.json());
 
 // Serve static files from the public folder
-app.use(express.static("public"));
+app.use(express.static(__dirname + "/public"));
 
 // Serve React app static assets (JS, CSS, etc.) from dist/ at /app
 app.use("/app", express.static("./dist"));
