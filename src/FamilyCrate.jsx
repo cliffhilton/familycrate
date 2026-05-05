@@ -921,7 +921,7 @@ export default function AppShell() {
         const expired  = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
         const cancelled = !isOwner && family?.subscription_status === "cancelled";
         if (expired || cancelled) { setAuthState("expired"); return; }
-        return apiGetFamily().then(data => { setAppData(data); setAuthState("app"); });
+        return apiGetFamily().then(data => { if(data.family_name) localStorage.setItem("fc_family_name", data.family_name); setAppData(data); setAuthState("app"); });
       })
       .catch(() => { setAuthState("login"); });
     if (!token && rt) {
@@ -950,7 +950,7 @@ export default function AppShell() {
         const isOwner = family?.owner_email === "cliffhilton@gmail.com";
         const expired = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
         if ((!isOwner && expired) || (!isOwner && family?.subscription_status === "cancelled")) { setAuthState("expired"); return; }
-        return apiGetFamily().then(data => { setAppData(data); setAuthState("app"); });
+        return apiGetFamily().then(data => { if(data.family_name) localStorage.setItem("fc_family_name", data.family_name); setAppData(data); setAuthState("app"); });
       })
       .catch(() => setAuthState("app"));
   };
@@ -1436,7 +1436,7 @@ function FamilyCrate({ apiData, onLogout }) {
         <header className="hdr">
           <div className="hdr-logo" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setView("home")}>
             <IconSVG height={40}/>
-            <span style={{fontSize:14,fontWeight:700,color:"var(--ink)",letterSpacing:-0.3,whiteSpace:"nowrap",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",fontFamily:"DM Sans,sans-serif"}}>{apiData?.family_name||"FamilyCrate"}</span>
+            <span style={{fontSize:14,fontWeight:700,color:"var(--ink)",letterSpacing:-0.3,whiteSpace:"nowrap",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",fontFamily:"DM Sans,sans-serif"}}>{apiData?.family_name||localStorage.getItem("fc_family_name")||"FamilyCrate"}</span>
           </div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
