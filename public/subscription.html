@@ -197,7 +197,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 
     <div class="guarantee">
       <div class="guarantee-icon">🛡️</div>
-      <div class="guarantee-text"><strong>No charge until your trial ends.</strong> Subscribe now to lock in your plan — your card won't be charged until April 21.</div>
+      <div class="guarantee-text"><strong>No charge until your trial ends.</strong> Subscribe now to lock in your plan — your card won't be charged until <span id="guarantee-date">April 21</span>.</div>
     </div>
 
     <button class="btn-pri" id="subscribeBtn" onclick="startCheckout()">Subscribe & lock in my plan →</button>
@@ -239,7 +239,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
         <div class="status-icon">⚠️</div>
         <div>
           <div class="status-title">Trial Ended</div>
-          <div class="status-sub">Your 14-day trial ended on April 21, 2026</div>
+          <div class="status-sub">Your 14-day trial ended on <span id="expired-date">April 21, 2026</span></div>
         </div>
       </div>
       <p style="font-size:13px;color:var(--ink2);line-height:1.55;">FamilyCrate is now in read-only mode. Your data is safe — subscribe to get back to full access.</p>
@@ -325,9 +325,16 @@ async function loadStatus() {
     document.getElementById('view-trial').style.display   = status === 'trial'   ? 'block' : 'none';
     document.getElementById('view-active').style.display  = status === 'active'  ? 'block' : 'none';
     document.getElementById('view-expired').style.display = status === 'expired' ? 'block' : 'none';
+    // Patch guarantee and expired dates
+    if (trialEnd) {
+      const gd = document.getElementById('guarantee-date');
+      if (gd) gd.textContent = trialEnd;
+      const ed = document.getElementById('expired-date');
+      if (ed) ed.textContent = trialEnd;
+    }
     if (status === 'trial' && data.trialDaysLeft !== undefined) {
       const els = document.querySelectorAll('.trial-bar-label span');
-      if (els[0]) els[0].textContent = `Day ${14 - data.trialDaysLeft} of 14`;
+      if (els[0]) els[0].textContent = `Day ${Math.max(1, 14 - data.trialDaysLeft)} of 14`;
       if (els[1]) els[1].textContent = `${data.trialDaysLeft} days remaining`;
       const used = Math.round((1 - data.trialDaysLeft/14)*100);
       const fill = document.querySelector('.trial-bar-fill');
