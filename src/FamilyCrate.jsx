@@ -989,6 +989,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [spentPoints,setSPR] = useState(()=>apiData?.spentPoints  || {});
   const [categories,setCatsR] = useState(()=>apiData?.categories?.length ? apiData.categories : load("fc_cats",INIT_CATEGORIES));
   const [rate,setRateR]      = useState(()=>apiData?.rate         || load("fc_rate",0.25));
+  const [familyName]         = useState(()=>apiData?.family_name  || "");
   const [periodStart,setPSR] = useState(()=>apiData?.periodStart  || load("fc_ps",PERIOD_START));
   const [periodDays,setPDR]  = useState(()=>apiData?.periodDays   || load("fc_pd",14));
 
@@ -1436,7 +1437,7 @@ function FamilyCrate({ apiData, onLogout }) {
         <header className="hdr">
           <div className="hdr-logo" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setView("home")}>
             <IconSVG height={40}/>
-            <span style={{fontSize:14,fontWeight:700,color:"var(--ink)",letterSpacing:-0.3,whiteSpace:"nowrap",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",fontFamily:"DM Sans,sans-serif"}}>{apiData?.family_name||"FamilyCrate"}</span>
+            <span style={{fontSize:14,fontWeight:700,color:"var(--ink)",letterSpacing:-0.3,whiteSpace:"nowrap",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",fontFamily:"DM Sans,sans-serif"}}>{familyName||"FamilyCrate"}</span>
           </div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
