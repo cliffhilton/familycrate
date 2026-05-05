@@ -530,6 +530,19 @@ function RewardIcon({ icon }) {
 }
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
+const IconSVG = ({ height = 44 }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71.6 71.6" style={{height,width:"auto"}}>
+    <defs><style>{`.i0{fill:#8f6a4a}.i1{fill:#333;mix-blend-mode:multiply;opacity:.2}.i2{isolation:isolate}`}</style></defs>
+    <g className="i2"><g>
+      <path className="i0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+      <path className="i1" d="M24.8,19.1c.7.7,1.4,1.4,2.1,2.2h4.1c-.8-.7-1.5-1.4-2.3-2.1h-4Z"/>
+      <path className="i1" d="M42.9,19.1v2.1h3.3v-2.1h-3.3Z"/>
+      <path className="i1" d="M29.8,54v-2.2h-3.5v2.2h3.5Z"/>
+      <path className="i1" d="M45.6,54c-.7-.7-1.4-1.4-2.1-2.2h-4.8c.7.7,1.4,1.5,2.1,2.2h4.9Z"/>
+    </g></g>
+  </svg>
+);
+
 const LogoSVG = ({ height = 26 }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style={{height,width:"auto"}}>
     <defs><style>{`.l0{fill:#8f6a4a}.l1{fill:#333;mix-blend-mode:multiply;opacity:.2}.l2{isolation:isolate}.l3{fill:#8b6b51}`}</style></defs>
@@ -1422,8 +1435,8 @@ function FamilyCrate({ apiData, onLogout }) {
         {/* Header */}
         <header className="hdr">
           <div className="hdr-logo" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setView("home")}>
-            <LogoSVG height={44}/>
-            {apiData?.family_name&&<span style={{fontSize:13,fontWeight:600,color:"var(--ink)",letterSpacing:-0.2,whiteSpace:"nowrap",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis"}}>{apiData.family_name}</span>}
+            <IconSVG height={40}/>
+            <span style={{fontSize:14,fontWeight:700,color:"var(--ink)",letterSpacing:-0.3,whiteSpace:"nowrap",maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",fontFamily:"DM Sans,sans-serif"}}>{apiData?.family_name||"FamilyCrate"}</span>
           </div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
