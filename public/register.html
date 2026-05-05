@@ -404,6 +404,14 @@ async function createAccount() {
     const res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
+    // Auto-login after registration
+    const loginRes = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:payload.email, password:payload.password}) });
+    const loginData = await loginRes.json();
+    if (loginData?.session?.access_token) {
+      localStorage.setItem('fc_token', loginData.session.access_token);
+      if (loginData.session.refresh_token) localStorage.setItem('fc_refresh_token', loginData.session.refresh_token);
+      if (loginData.family?.id) localStorage.setItem('fc_family_id', loginData.family.id);
+    }
     document.getElementById('steps').style.display = 'none';
     setStep('success');
   } catch (err) {

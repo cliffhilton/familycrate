@@ -289,8 +289,36 @@ async function loadStatus() {
   try {
     const token = localStorage.getItem('fc_token') || '';
     if (!token) { window.location.href = '/login.html'; return; }
-    const res = await fetch('/api/stripe/status', { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
+    // Fetch both status and family info in parallel
+    const [statusRes, meRes] = await Promise.all([
+      fetch('/api/stripe/status', { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } }),
+    ]);
+    const data = await statusRes.json();
+    const me = await meRes.json();
+    const familyName = me?.family?.family_name || '';
+    const memberCount = me?.family?.member_count || '';
+    const trialStart = me?.family?.created_at ? new Date(me.family.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+    const trialEnd = me?.family?.trial_ends_at ? new Date(me.family.trial_ends_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+
+    // Patch all hardcoded family name references
+    document.querySelectorAll('.status-sub').forEach(el => {
+      if (el.textContent.includes('Johnson')) {
+        el.textContent = familyName + (trialStart ? ' · Started ' + trialStart : '');
+      } else if (el.textContent.includes('Johnson')) {
+        el.textContent = familyName;
+      } else {
+        el.textContent = familyName;
+      }
+    });
+    // Patch trial end date
+    if (trialEnd) {
+      document.querySelectorAll('.sd-value').forEach(el => {
+        if (el.textContent.includes('April 21')) el.textContent = trialEnd;
+        if (el.textContent.includes('April 7')) el.textContent = trialStart;
+      });
+    }
+
     let status = 'expired';
     if (data.isTrialing) status = 'trial';
     else if (data.isActive) status = 'active';
@@ -299,6 +327,7 @@ async function loadStatus() {
     document.getElementById('view-expired').style.display = status === 'expired' ? 'block' : 'none';
     if (status === 'trial' && data.trialDaysLeft !== undefined) {
       const els = document.querySelectorAll('.trial-bar-label span');
+      if (els[0]) els[0].textContent = `Day ${14 - data.trialDaysLeft} of 14`;
       if (els[1]) els[1].textContent = `${data.trialDaysLeft} days remaining`;
       const used = Math.round((1 - data.trialDaysLeft/14)*100);
       const fill = document.querySelector('.trial-bar-fill');

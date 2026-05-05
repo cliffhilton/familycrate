@@ -1421,7 +1421,10 @@ function FamilyCrate({ apiData, onLogout }) {
 
         {/* Header */}
         <header className="hdr">
-          <div className="hdr-logo" style={{cursor:"pointer"}} onClick={()=>setView("home")}><LogoSVG height={44}/></div>
+          <div className="hdr-logo" style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8}} onClick={()=>setView("home")}>
+            <LogoSVG height={44}/>
+            {apiData?.family_name&&<span style={{fontSize:13,fontWeight:600,color:"var(--ink)",letterSpacing:-0.2,whiteSpace:"nowrap",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis"}}>{apiData.family_name}</span>}
+          </div>
           <div className="hdr-members" style={{display:isMobile?"none":"flex"}}>
             <button className={`all-chip ${filterMids.size===0?"active":""}`} onClick={()=>setFilterMids(new Set())}>All</button>
             {members.map(m=>{
