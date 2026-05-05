@@ -32,8 +32,8 @@ router.post("/checkout", requireAuth, async (req, res) => {
         trial_period_days: 14,
         metadata: { familyId: req.familyId },
       },
-      success_url: `https://familycrate.co/app?subscribed=true`,
-      cancel_url:  `https://familycrate.co/pricing`,
+      success_url: `https://www.familycrate.co/app/?subscribed=true`,
+      cancel_url:  `https://www.familycrate.co/subscription.html`,
       metadata: { familyId: req.familyId },
     });
 
