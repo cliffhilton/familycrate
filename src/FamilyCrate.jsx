@@ -899,20 +899,36 @@ export default function AppShell() {
 
   useEffect(() => {
     const token = localStorage.getItem("fc_token");
-    if (!token) { setAuthState("login"); return; }
-    apiMe()
+    const rt = localStorage.getItem("fc_refresh_token");
+    if (!token && !rt) { setAuthState("login"); return; }
+    // If no access token but we have a refresh token, try to refresh first
+    const proceed = () => apiMe()
       .then(({ family }) => {
         const isOwner = family?.owner_email === "cliffhilton@gmail.com";
         const expired  = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
         const cancelled = !isOwner && family?.subscription_status === "cancelled";
         if (expired || cancelled) { setAuthState("expired"); return; }
-        // Load family data
         return apiGetFamily().then(data => { setAppData(data); setAuthState("app"); });
       })
-      .catch(() => {
-        // No valid token — show login but let app load with localStorage data
-        setAuthState("app");
-      });
+      .catch(() => { setAuthState("login"); });
+    if (!token && rt) {
+      // Try refresh before showing login
+      fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: rt }),
+      }).then(r=>r.json()).then(data => {
+        if (data?.access_token) {
+          localStorage.setItem("fc_token", data.access_token);
+          if (data.refresh_token) localStorage.setItem("fc_refresh_token", data.refresh_token);
+          proceed();
+        } else {
+          setAuthState("login");
+        }
+      }).catch(() => setAuthState("login"));
+    } else {
+      proceed();
+    }
   }, []);
 
   const handleLogin = () => {
