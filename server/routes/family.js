@@ -45,10 +45,11 @@ router.get("/", requireAuth, async (req, res) => {
       supabase.from("rewards").select("*").eq("family_id", fid),
       supabase.from("done_log").select("*").eq("family_id", fid),
       supabase.from("redeem_requests").select("*").eq("family_id", fid).neq("status", "declined"),
-      supabase.from("families").select("rate, period_start, period_days, spent_points, categories").eq("id", fid).single(),
+      supabase.from("families").select("rate, period_start, period_days, spent_points, categories, family_name").eq("id", fid).single(),
     ]);
 
     res.json({
+      family_name: settings.data?.family_name || "",
       members: members.data || [],
       items: items.data || [],
       events: events.data || [],
