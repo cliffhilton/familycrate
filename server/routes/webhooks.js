@@ -57,6 +57,30 @@ router.post("/stripe", async (req, res) => {
       break;
     }
 
+    // Checkout completed (subscription started)
+    case "checkout.session.completed": {
+      const customerId = data.customer;
+      const subscriptionId = data.subscription;
+      const familyId = data.metadata?.familyId;
+      if (familyId && subscriptionId) {
+        await supabase.from("families").update({
+          subscription_status: "active",
+          stripe_subscription_id: subscriptionId,
+        }).eq("id", familyId);
+        console.log(`Family ${familyId} checkout completed → active`);
+      } else if (customerId) {
+        const { data: family } = await supabase
+          .from("families").select("id").eq("stripe_customer_id", customerId).single();
+        if (family) {
+          await supabase.from("families").update({
+            subscription_status: "active",
+            stripe_subscription_id: subscriptionId,
+          }).eq("id", family.id);
+        }
+      }
+      break;
+    }
+
     // Payment succeeded
     case "invoice.payment_succeeded": {
       const customerId = data.customer;
