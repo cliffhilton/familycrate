@@ -441,6 +441,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .set-page{flex:1 1 0;overflow-y:auto;padding:14px;}
 .set-sec{margin-bottom:20px;}
 .set-sec-title{font-size:15px;font-weight:500;margin-bottom:3px;}
+@keyframes rewardBounce{0%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}60%{transform:translateY(-2px);}}
+.tblock-reward{animation:rewardBounce 2s ease-in-out infinite;border-left:none!important;border-radius:8px!important;}
 .set-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
 .set-col{display:flex;flex-direction:column;}
 @media(max-width:600px){.set-cols{grid-template-columns:1fr;}}
@@ -1608,10 +1610,10 @@ function FamilyCrate({ apiData, onLogout }) {
                       return (
                         <div key={ds} className="pcol" style={{height:totalGridHeight,position:"relative",flex:"1",minWidth:showWeekends?80:110}} onClick={e=>{if(e.target===e.currentTarget){setSelDate(ds);setDayView("day");}}}>
                           {laid.map(block=>{const n2=Math.min(block.totalCols,3),colW2=1/n2,leftPct=block.col*colW2*100,widthPct=colW2*100;return(
-                            <div key={block.id} className="tblock" style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 1px)`,width:`calc(${widthPct}% - 3px)`,background:`${block.color}22`,borderLeftColor:block.color,zIndex:block.col+1}} onClick={e=>{e.stopPropagation();if(block.kind==="event") setViewModal({event:events.find(ev=>ev.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:block.memberId,ds});}}>
-                              <div className="tblock-title" style={{color:block.color,fontSize:10,paddingRight:block.isGoogle?18:block.kind==="item"?18:0}}>{block.title}</div>
+                            <div key={block.id} className={`tblock${block.kind==="event"&&events.find(ev=>ev.id===block.evId)?.title?.startsWith("🎉")?" tblock-reward":""}`} style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 1px)`,width:`calc(${widthPct}% - 3px)`,background:block.kind==="event"&&events.find(ev=>ev.id===block.evId)?.title?.startsWith("🎉")?"var(--gold)":`${block.color}22`,borderLeftColor:block.color,zIndex:block.col+1}} onClick={e=>{e.stopPropagation();if(block.kind==="event") setViewModal({event:events.find(ev=>ev.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:block.memberId,ds});}}>
+                              {(()=>{const isReward=block.kind==="event"&&events.find(ev=>ev.id===block.evId)?.title?.startsWith("🎉");return(<div className="tblock-title" style={{color:isReward?"#fff":block.color,fontSize:10,fontWeight:isReward?700:500,paddingRight:block.isGoogle?18:block.kind==="item"?18:0}}>{block.title}</div>);})()}
                               {block.isGoogle&&<div style={{position:"absolute",top:3,right:3,background:"#4A90D9",color:"#fff",borderRadius:3,padding:"1px 4px",fontSize:8,fontWeight:700,lineHeight:1.2}}>G</div>}
-                              {block.height>26&&<div className="tblock-time" style={{color:block.color,fontSize:8}}>{block.time}</div>}
+                              {block.height>26&&<div className="tblock-time" style={{color:block.kind==="event"&&events.find(ev=>ev.id===block.evId)?.title?.startsWith("🎉")?"rgba(255,255,255,0.85)":block.color,fontSize:8}}>{block.time}</div>}
                               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color,fontSize:8}}>{block.note}</div>}
                               {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:17,height:17,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();if(block.memberId)toggleDone(block.itemId,block.memberId,ds);}}>{block.done?"✓":""}</button>}
                             </div>
