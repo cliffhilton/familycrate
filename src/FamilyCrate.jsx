@@ -441,8 +441,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .set-page{flex:1 1 0;overflow-y:auto;padding:14px;}
 .set-sec{margin-bottom:20px;}
 .set-sec-title{font-size:15px;font-weight:500;margin-bottom:3px;}
-@keyframes rewardBounce{0%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}60%{transform:translateY(-2px);}}
-.tblock-reward{animation:rewardBounce 2s ease-in-out infinite;border-left:none!important;border-radius:8px!important;}
+@keyframes rewardJiggle{0%,100%{transform:rotate(0deg);}15%{transform:rotate(-2deg);}30%{transform:rotate(2deg);}45%{transform:rotate(-1.5deg);}60%{transform:rotate(1.5deg);}75%{transform:rotate(-1deg);}90%{transform:rotate(0.5deg);}}
+.tblock-reward{animation:rewardJiggle 1.8s ease-in-out infinite;border-left:none!important;border-radius:8px!important;transform-origin:center bottom;}
+.tblock-reward:hover,.tblock-reward:active{animation:none;}
 .set-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
 .set-col{display:flex;flex-direction:column;}
 @media(max-width:600px){.set-cols{grid-template-columns:1fr;}}
@@ -618,6 +619,10 @@ function ViewModal({ item, event, members, memberId, ds, isDone, onToggle, onEdi
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="mbtn-ghost" onClick={onClose}>Close</button><button className="mbtn-pri" onClick={onEdit}>Edit</button></div>
         </>)}
         {event && (<>
+          {event.title?.startsWith("🎉")&&<div style={{background:"linear-gradient(135deg,#C49A3C,#E8C060)",borderRadius:12,padding:"14px 16px",textAlign:"center",marginBottom:4}}>
+            <div style={{fontSize:28,marginBottom:4}}>🎉</div>
+            <div style={{fontSize:13,fontWeight:700,color:"#fff",letterSpacing:0.3}}>Earned Reward!</div>
+          </div>}
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:12,height:12,borderRadius:"50%",background:color,flexShrink:0}}/>
             <div style={{fontSize:18,fontWeight:600,color:"var(--ink)"}}>{event.title}</div>
