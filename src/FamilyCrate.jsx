@@ -1353,8 +1353,8 @@ function FamilyCrate({ apiData, onLogout }) {
     apiDeclineRedeem(id).catch(console.error);
   };
   const resetPeriod=()=>{
-    const ns=addDays(TODAY,-periodDays),cleaned={};
-    Object.entries(doneLog).forEach(([k,v])=>{const ds=k.split("__")[2];if(ds>=ns)cleaned[k]=v;});
+    const ns=TODAY,cleaned={};
+    Object.entries(doneLog).forEach(([k,v])=>{const ds=k.split("__")[2];if(ds>=TODAY)cleaned[k]=v;});
     setDoneLog(cleaned);setPeriodStart(ns);setSpentPoints({});setConfirmModal(null);
     apiUpdateSettings({period_start:ns,period_days:periodDays,rate,spent_points:{}}).catch(console.error);
   };
