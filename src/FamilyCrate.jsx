@@ -1356,7 +1356,7 @@ function FamilyCrate({ apiData, onLogout }) {
     const ns=addDays(TODAY,-periodDays),cleaned={};
     Object.entries(doneLog).forEach(([k,v])=>{const ds=k.split("__")[2];if(ds>=ns)cleaned[k]=v;});
     setDoneLog(cleaned);setPeriodStart(ns);setSpentPoints({});setConfirmModal(null);
-    apiUpdateSettings({periodStart:ns,periodDays,rate}).catch(console.error);
+    apiUpdateSettings({period_start:ns,period_days:periodDays,rate,spent_points:{}}).catch(console.error);
   };
 
   // Pull to refresh
