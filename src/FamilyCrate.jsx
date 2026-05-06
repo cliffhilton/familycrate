@@ -738,13 +738,14 @@ function RewardModal({ reward, onSave, onDelete, onClose }) {
   </div></ModalWrap>);
 }
 
-function RedeemModal({ reward, members, earnedInPeriod, spentPoints, onSubmit, onClose }) {
+function RedeemModal({ reward, members, earnedInPeriod, spentPoints, redeemReqs, rewards, onSubmit, onClose }) {
   const [who,setWho]=useState(null);
-  const avail=who?earnedInPeriod(who)-(spentPoints[who]||0):0;
+  const pendingPts=mid=>(redeemReqs||[]).filter(r=>r.memberId===mid&&r.status==="pending").reduce((sum,r)=>{const rw=(rewards||[]).find(x=>x.id===r.rewardId);return sum+(rw?.points||0);},0);
+  const avail=who?earnedInPeriod(who)-(spentPoints[who]||0)-pendingPts(who):0;
   const canAfford=who?avail>=reward.points:false;
   return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">Redeem: {reward.title}</div>
     <div style={{fontSize:13,color:"var(--muted)"}}>Costs {reward.points} pts. Who is redeeming?</div>
-    <div className="ag">{members.map(m=>{ const a=earnedInPeriod(m.id)-(spentPoints[m.id]||0); return (<button key={m.id} className={`ac ${who===m.id?"on":""}`} onClick={()=>setWho(m.id)}><Avatar member={m} size={13}/>{m.name} <span style={{fontSize:10,opacity:.7}}>({a}pt)</span></button>); })}</div>
+    <div className="ag">{members.map(m=>{ const a=earnedInPeriod(m.id)-(spentPoints[m.id]||0)-pendingPts(m.id); return (<button key={m.id} className={`ac ${who===m.id?"on":""}`} onClick={()=>setWho(m.id)}><Avatar member={m} size={13}/>{m.name} <span style={{fontSize:10,opacity:.7}}>({a}pt)</span></button>); })}</div>
     {who&&!canAfford&&<div style={{fontSize:12,color:"#CC3A3A"}}>Not enough points — needs {reward.points}, has {avail}</div>}
     <div className="mact"><button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" disabled={!who||!canAfford} onClick={()=>who&&canAfford&&onSubmit(who)} style={{opacity:(who&&canAfford)?1:.5}}>Request</button></div>
   </div></ModalWrap>);
@@ -1900,7 +1901,7 @@ function FamilyCrate({ apiData, onLogout }) {
       />}
       {mModal&&<MemberModal member={mModal.member} onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}} onDelete={()=>{delMember(mModal.member.id);setMModal(null);}} onClose={()=>setMModal(null)}/>}
       {rwModal&&<RewardModal reward={rwModal.reward} onSave={p=>{saveReward(rwModal.reward?.id,p);setRwModal(null);}} onDelete={()=>{delReward(rwModal.reward.id);setRwModal(null);}} onClose={()=>setRwModal(null)}/>}
-      {rdModal&&<RedeemModal reward={rdModal.reward} members={members} earnedInPeriod={earnedInPeriod} spentPoints={spentPoints} onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}} onClose={()=>setRdModal(null)}/>}
+      {rdModal&&<RedeemModal reward={rdModal.reward} members={members} earnedInPeriod={earnedInPeriod} spentPoints={spentPoints} redeemReqs={redeemReqs} rewards={rewards} onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}} onClose={()=>setRdModal(null)}/>}
       {confirmModal&&<ConfirmModal title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onClose={()=>setConfirmModal(null)}/>}
       {calPickerOpen&&(
         <div className="ov" onMouseDown={e=>e.target===e.currentTarget&&setCalPickerOpen(false)}>
