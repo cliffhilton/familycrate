@@ -1423,7 +1423,7 @@ function FamilyCrate({ apiData, onLogout }) {
           const isDraggingThis=dragging?.blockId===block.id;
           return (
             <div key={block.id} className="tblock"
-              style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 2px)`,width:`calc(${widthPct}% - 4px)`,minWidth:20,background:block.isReward?"#C49A3C":`${block.color}28`,borderLeftColor:block.isReward?"#C49A3C":block.color,opacity:isDraggingThis?.4:1,cursor:block.kind==="item"?"grab":"pointer",zIndex:block.col+1}}
+              style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 2px)`,width:`calc(${widthPct}% - 4px)`,minWidth:20,background:block.isReward?"linear-gradient(135deg,#C49A3C,#E8C060)":`${block.color}28`,borderLeftColor:block.isReward?"#C49A3C":block.color,opacity:isDraggingThis?.4:1,cursor:block.kind==="item"?"grab":"pointer",zIndex:block.col+1}}
               onMouseDown={block.kind==="item"?e=>onMouseDown(e,block,m.id):undefined}
               onClick={()=>{if(block.kind==="event") setViewModal({event:events.find(e=>e.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:m.id,ds});}}>
               <div className="tblock-title" style={{color:block.isReward?"#fff":block.color,fontWeight:block.isReward?700:500,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
