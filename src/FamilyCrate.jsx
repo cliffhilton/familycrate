@@ -1401,7 +1401,7 @@ function FamilyCrate({ apiData, onLogout }) {
     const colItems=itemsForMemberOnDate(mid,ds);
     const blocks=[];
     colEvs.forEach(ev=>{if(ev.source==="google")return; // Google events shown in week view only
-    const sm=timeToMinutes(ev.time);const dur=ev.duration||60;if(sm<DAY_START||sm>=DAY_END)return;blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR,type:ev.type});});
+    const sm=timeToMinutes(ev.time);const dur=ev.duration||60;if(sm<DAY_START||sm>=DAY_END)return;const evIsReward=ev.title?.startsWith("🎉");blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR,type:ev.type,isReward:evIsReward});});
     colItems.forEach(item=>{if(!item.time)return;const sm=timeToMinutes(item.time);const dur=item.duration||30;if(sm<DAY_START||sm>=DAY_END)return;blocks.push({id:`it-${item.id}`,itemId:item.id,kind:"item",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:item.text,time:item.time,note:item.note,points:item.points,color:members.find(m=>m.id===mid)?.color||"#8A8A8A",done:isDone(item.id,mid,ds),memberId:mid});});
     return layoutBlocks(blocks);
   }
