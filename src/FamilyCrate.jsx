@@ -1418,11 +1418,11 @@ function FamilyCrate({ apiData, onLogout }) {
           const isDraggingThis=dragging?.blockId===block.id;
           return (
             <div key={block.id} className="tblock"
-              style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 2px)`,width:`calc(${widthPct}% - 4px)`,minWidth:20,background:`${block.color}28`,borderLeftColor:block.color,opacity:isDraggingThis?.4:1,cursor:block.kind==="item"?"grab":"pointer",zIndex:block.col+1}}
+              style={{top:block.top,height:block.height,left:`calc(${leftPct}% + 2px)`,width:`calc(${widthPct}% - 4px)`,minWidth:20,background:block.isReward?"#C49A3C":`${block.color}28`,borderLeftColor:block.isReward?"#C49A3C":block.color,opacity:isDraggingThis?.4:1,cursor:block.kind==="item"?"grab":"pointer",zIndex:block.col+1}}
               onMouseDown={block.kind==="item"?e=>onMouseDown(e,block,m.id):undefined}
               onClick={()=>{if(block.kind==="event") setViewModal({event:events.find(e=>e.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:m.id,ds});}}>
-              <div className="tblock-title" style={{color:block.color,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
-              {block.height>28&&<div className="tblock-time" style={{color:block.color}}>{block.time}</div>}
+              <div className="tblock-title" style={{color:block.isReward?"#fff":block.color,fontWeight:block.isReward?700:500,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
+              {block.height>28&&<div className="tblock-time" style={{color:block.isReward?"rgba(255,255,255,0.85)":block.color}}>{block.time}</div>}
               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
               {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:17,height:17,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
             </div>
