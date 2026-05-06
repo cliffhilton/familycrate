@@ -1811,7 +1811,7 @@ function FamilyCrate({ apiData, onLogout }) {
                     );})}
                   </div>
                 )}
-                {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved").sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
+                {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved"&&(!r.created_at||r.created_at.slice(0,10)>=periodStart)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
                   <div className="set-sec">
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                       <div>
