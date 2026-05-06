@@ -661,7 +661,7 @@ function ItemModal({ item, members, prefill, categories, onSave, onDelete, onClo
 }
 
 // ─── Event Modal ──────────────────────────────────────────────────────────────
-function EventModal({ event, members, onSave, onDelete, onClose }) {
+function EventModal({ event, members, onSave, onDelete, onClose, skipLabel }) {
   const [title,setTitle] = useState(event?.title??"");
   const [date,setDate]   = useState(event?.date??TODAY);
   const [sd,setSd]       = useState(event?.startDate??event?.date??TODAY);
@@ -684,7 +684,7 @@ function EventModal({ event, members, onSave, onDelete, onClose }) {
     </div>
     <div className="mgrid2"><div className="mrow"><div className="mlbl">Type</div><select className="min" value={type} onChange={e=>setType(e.target.value)}><option value="family">Family</option><option value="school">School</option><option value="activity">Activity</option></select></div></div>
     <div className="mrow"><div className="mlbl">Who's involved</div><div className="ag"><button className={`ac ${who.length===0?"on":""}`} onClick={()=>setWho([])}>Everyone</button>{members.map(m=><button key={m.id} className={`ac ${who.includes(m.id)?"on":""}`} onClick={()=>toggleWho(m.id)}><Avatar member={m} size={13}/>{m.name}</button>)}</div></div>
-    <div className="mact">{event&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" onClick={save}>Save</button></div>
+    <div className="mact">{event&&onDelete&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>{skipLabel||"Cancel"}</button><button className="mbtn-pri" onClick={save}>{skipLabel?"Save to Calendar":"Save"}</button></div>
   </div></ModalWrap>);
 }
 
@@ -1317,18 +1317,28 @@ function FamilyCrate({ apiData, onLogout }) {
       setRedeemReqs(p=>[...p,{id:res.id||uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]);
     } catch { setRedeemReqs(p=>[...p,{id:uid(),rewardId:rId,memberId:mId,status:"pending",pts:r.points,ts:Date.now()}]); }
   };
-  const approveReq=id=>{
+  const doApprove=id=>{
     setRedeemReqs(p=>p.map(r=>{
       if(r.id!==id)return r;
       setSpentPoints(sp=>({...sp,[r.memberId]:(sp[r.memberId]||0)+(r.pts||0)}));
       return{...r,status:"approved"};
     }));
     apiApproveRedeem(id).then(()=>{
-      // Refresh after delay to let DB write complete
       setTimeout(()=>apiGetFamily().then(data=>{
         if(data.spentPoints) setSPR(data.spentPoints);
       }).catch(()=>{}), 1500);
     }).catch(console.error);
+  };
+  const [rewardScheduleModal,setRewardScheduleModal] = useState(null);
+  const approveReq=id=>{
+    const req=redeemReqs.find(r=>r.id===id);
+    const rw=rewards.find(r=>r.id===req?.rewardId);
+    const mem=getMember(members,req?.memberId);
+    if(req&&rw&&mem){
+      setRewardScheduleModal({reqId:id,title:"🎉 "+mem.name+" — "+rw.title,memberId:mem.id,memberColor:mem.color});
+    } else {
+      doApprove(id);
+    }
   };
   const declineReq=id=>{
     setRedeemReqs(p=>p.map(r=>r.id===id?{...r,status:"declined"}:r));
@@ -1873,6 +1883,14 @@ function FamilyCrate({ apiData, onLogout }) {
       {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{const doEdit=()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);};if(!parentPin){setPinModal("setup");}else if(!pinUnlocked){setPinModal("enter");}else{doEdit();}}} onClose={()=>setViewModal(null)}/>}
       {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
       {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
+      {rewardScheduleModal&&<EventModal
+        event={{title:rewardScheduleModal.title,memberIds:[rewardScheduleModal.memberId],type:"family",color:rewardScheduleModal.memberColor}}
+        members={members}
+        onSave={p=>{saveEvent(null,{...p,color:rewardScheduleModal.memberColor});doApprove(rewardScheduleModal.reqId);setRewardScheduleModal(null);}}
+        onDelete={null}
+        onClose={()=>{doApprove(rewardScheduleModal.reqId);setRewardScheduleModal(null);}}
+        skipLabel="Approve only"
+      />}
       {mModal&&<MemberModal member={mModal.member} onSave={p=>{saveMember(mModal.member?.id,p);setMModal(null);}} onDelete={()=>{delMember(mModal.member.id);setMModal(null);}} onClose={()=>setMModal(null)}/>}
       {rwModal&&<RewardModal reward={rwModal.reward} onSave={p=>{saveReward(rwModal.reward?.id,p);setRwModal(null);}} onDelete={()=>{delReward(rwModal.reward.id);setRwModal(null);}} onClose={()=>setRwModal(null)}/>}
       {rdModal&&<RedeemModal reward={rdModal.reward} members={members} earnedInPeriod={earnedInPeriod} spentPoints={spentPoints} onSubmit={mid=>{submitRedeem(rdModal.reward.id,mid);setRdModal(null);}} onClose={()=>setRdModal(null)}/>}
