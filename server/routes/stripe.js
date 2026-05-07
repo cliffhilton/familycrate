@@ -25,7 +25,9 @@ router.post("/checkout", requireAuth, async (req, res) => {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{
-        price: process.env.STRIPE_PRICE_ID, // your $19/mo price ID from Stripe
+        price: req.body.plan === "yearly"
+          ? process.env.STRIPE_PRICE_ID_YEARLY
+          : process.env.STRIPE_PRICE_ID,
         quantity: 1,
       }],
       subscription_data: {
