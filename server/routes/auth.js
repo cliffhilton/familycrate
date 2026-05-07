@@ -21,6 +21,7 @@ router.post("/register", async (req, res) => {
     if (authError) return res.status(400).json({ error: authError.message });
 
     const userId = authData.user.id;
+    console.log("Register: userId =", userId, "email =", email);
 
     // 2. Create Stripe customer
     const customer = await stripe.customers.create({
