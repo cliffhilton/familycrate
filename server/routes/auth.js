@@ -1,6 +1,8 @@
 import express from "express";
 import supabase from "../lib/supabase.js";
 import stripe from "../lib/stripe.js";
+import { Resend } from "resend";
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const router = express.Router();
 
@@ -53,6 +55,29 @@ router.post("/register", async (req, res) => {
         }))
       : [{ family_id: userId, name: parentName, color: "#8A6A50", role: "admin", email }];
     await supabase.from("members").insert(membersToInsert);
+
+    // Send welcome email (non-blocking)
+    resend.emails.send({
+      from: "Cliff at FamilyCrate <cliff@familycrate.co>",
+      to: email,
+      subject: `Welcome to FamilyCrate, ${familyName}! 🏡`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fff;">
+          <h2 style="color:#1A2A38;margin-top:20px;">Welcome, ${parentName}! 👋</h2>
+          <p style="color:#344F62;">You've set up <strong>${familyName}</strong> on FamilyCrate. Your 14-day free trial starts today — no credit card needed yet.</p>
+          <h3 style="color:#1A2A38;margin-top:20px;">Getting started:</h3>
+          <ol style="color:#344F62;line-height:2;">
+            <li>Set your Parent PIN in Settings</li>
+            <li>Add chores with point values</li>
+            <li>Set up your Rewards Store</li>
+            <li>Watch your kids get competitive 😄</li>
+          </ol>
+          <a href="https://www.familycrate.co/app" style="display:inline-block;background:#3A6A88;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500;margin-top:16px;">Open FamilyCrate →</a>
+          <p style="color:#344F62;margin-top:24px;">Questions? Just reply to this email — I read every one personally.</p>
+          <p style="color:#344F62;">— Cliff<br/><span style="color:#7A96A8;font-size:12px;">Founder, FamilyCrate · familycrate.co</span></p>
+        </div>
+      `,
+    }).catch(err => console.error("Welcome email failed:", err));
 
     res.json({ success: true, userId, customerId: customer.id });
 
