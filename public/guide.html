@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FamilyCrate — Parent Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#1A2A38;--ink2:#3A5060;--muted:#7A96A8;
+  --bg:#F0F4F8;--surf:#FAFCFE;--bdr:#D8E4EE;
+  --sky:#3A6A88;--sky-lt:#E0EEF6;--sky-bd:#A0C4DA;
+  --gold:#C49A3C;--gold-lt:#FDF5DC;--gold-bd:#EDD898;
+  --green:#3A9A5A;--green-lt:#EAF5EE;--green-bd:#A8D8B8;
+  --red:#CC3A3A;--red-lt:#FDEAEA;
+  --tan:#716559;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;background:rgba(250,252,254,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);padding:0 32px;}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.nav-logo{display:flex;align-items:center;gap:10px;}
+.nav-logo svg{height:32px;width:auto;}
+.nav-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--ink);}
+.nav-links{display:flex;gap:6px;flex-wrap:wrap;}
+.nav-link{font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:20px;transition:all .15s;white-space:nowrap;}
+.nav-link:hover{color:var(--sky);background:var(--sky-lt);}
+@media(max-width:700px){.nav-links{display:none;}.nav{padding:0 16px;}}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--ink) 0%,#2A4A60 100%);padding:72px 32px 80px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+.hero-inner{max-width:700px;margin:0 auto;position:relative;z-index:1;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(196,154,60,.2);border:1px solid rgba(196,154,60,.4);color:#E8C060;font-size:12px;font-weight:600;padding:5px 14px;border-radius:100px;margin-bottom:24px;letter-spacing:.5px;text-transform:uppercase;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,52px);font-weight:500;color:#fff;line-height:1.15;margin-bottom:16px;}
+.hero h1 em{font-style:italic;color:#E8C060;}
+.hero-sub{font-size:16px;color:rgba(255,255,255,.65);max-width:480px;margin:0 auto 32px;line-height:1.65;}
+.hero-toc{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.hero-toc a{font-size:12px;font-weight:500;color:rgba(255,255,255,.7);text-decoration:none;padding:6px 14px;border-radius:100px;border:1px solid rgba(255,255,255,.2);transition:all .2s;}
+.hero-toc a:hover{background:rgba(255,255,255,.1);color:#fff;}
+
+/* ── LAYOUT ── */
+.guide{max-width:1100px;margin:0 auto;padding:48px 32px 80px;}
+@media(max-width:700px){.guide{padding:32px 16px 60px;}}
+
+/* ── SECTION ── */
+.section{margin-bottom:64px;}
+.section-header{display:flex;align-items:center;gap:16px;margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid var(--bdr);}
+.section-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.section-icon.blue{background:var(--sky-lt);}
+.section-icon.gold{background:var(--gold-lt);}
+.section-icon.green{background:var(--green-lt);}
+.section-icon.red{background:var(--red-lt);}
+.section-num{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.section-title{font-family:'Playfair Display',serif;font-size:26px;font-weight:500;color:var(--ink);}
+
+/* ── CARDS ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px;}
+.card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;padding:22px;}
+.card-icon{font-size:24px;margin-bottom:10px;}
+.card-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.card-body{font-size:13px;color:var(--ink2);line-height:1.6;}
+
+/* ── STEPS ── */
+.steps{display:flex;flex-direction:column;gap:16px;margin-bottom:24px;}
+.step{display:flex;gap:16px;align-items:flex-start;background:var(--surf);border:1.5px solid var(--bdr);border-radius:14px;padding:20px;}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--sky);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-content{flex:1;}
+.step-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.step-body{font-size:13px;color:var(--ink2);line-height:1.6;}
+.step-tip{margin-top:8px;padding:8px 12px;background:var(--gold-lt);border:1px solid var(--gold-bd);border-radius:8px;font-size:12px;color:#8A6A20;}
+.step-tip strong{color:var(--gold);}
+.step-kids{margin-top:8px;padding:8px 12px;background:var(--green-lt);border:1px solid var(--green-bd);border-radius:8px;font-size:12px;color:#2A6A3A;}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:600px){.two-col{grid-template-columns:1fr;}}
+
+/* ── INFO BLOCK ── */
+.info{background:var(--sky-lt);border:1.5px solid var(--sky-bd);border-radius:14px;padding:20px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;}
+.info-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.info-body{font-size:13px;color:var(--ink2);line-height:1.6;}
+.info-body strong{color:var(--sky);}
+
+.warn{background:var(--gold-lt);border:1.5px solid var(--gold-bd);border-radius:14px;padding:20px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;}
+.warn-body{font-size:13px;color:#8A6A20;line-height:1.6;}
+.warn-body strong{color:var(--gold);}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;background:var(--surf);border-radius:14px;overflow:hidden;border:1.5px solid var(--bdr);}
+th{background:var(--ink);color:#fff;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px;text-align:left;}
+td{padding:12px 16px;font-size:13px;color:var(--ink2);border-bottom:1px solid var(--bdr);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.badge{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;}
+.badge.yes{background:var(--green-lt);color:var(--green);}
+.badge.no{background:var(--red-lt);color:var(--red);}
+.badge.pin{background:var(--gold-lt);color:var(--gold);}
+
+/* ── PILL LIST ── */
+.pill-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:100px;font-size:13px;color:var(--ink2);}
+.pill::before{content:'✓';color:var(--green);font-weight:700;font-size:11px;}
+
+/* ── FAQ ── */
+.faq{display:flex;flex-direction:column;gap:2px;margin-bottom:24px;}
+.faq-item{background:var(--surf);border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:4px;}
+.faq-q{padding:16px 20px;font-size:14px;font-weight:500;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.faq-q:hover{background:var(--bg);}
+.faq-arrow{font-size:16px;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.faq-a{padding:0 20px 16px;font-size:13px;color:var(--ink2);line-height:1.65;display:none;}
+.faq-item.open .faq-a{display:block;}
+.faq-item.open .faq-arrow{transform:rotate(180deg);}
+.faq-item.open .faq-q{color:var(--sky);}
+
+/* ── DIVIDER ── */
+.divider{border:none;border-top:1px solid var(--bdr);margin:32px 0;}
+
+/* ── HIGHLIGHT BOX ── */
+.highlight{background:linear-gradient(135deg,var(--ink),#2A4A60);border-radius:18px;padding:32px;margin-bottom:24px;color:#fff;}
+.highlight h3{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:8px;}
+.highlight p{font-size:13px;color:rgba(255,255,255,.7);line-height:1.65;}
+
+/* ── FOOTER ── */
+.footer{background:var(--ink);padding:32px;text-align:center;}
+.footer p{font-size:13px;color:rgba(255,255,255,.4);}
+.footer a{color:rgba(255,255,255,.6);text-decoration:none;}
+.footer a:hover{color:#fff;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 71.6 71.6">
+        <path fill="#8f6a4a" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+      </svg>
+      <span class="nav-title">Parent Guide</span>
+    </div>
+    <div class="nav-links">
+      <a href="#getting-started" class="nav-link">Getting Started</a>
+      <a href="#calendar" class="nav-link">Calendar</a>
+      <a href="#chores" class="nav-link">Chores</a>
+      <a href="#points" class="nav-link">Points</a>
+      <a href="#rewards" class="nav-link">Rewards</a>
+      <a href="#settings" class="nav-link">Settings</a>
+      <a href="#subscription" class="nav-link">Subscription</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">📖 Parent Guide</div>
+    <h1>Everything you need to<br/><em>run your family</em> with FamilyCrate.</h1>
+    <p class="hero-sub">A complete guide for parents — from first login to daily use. Simple, clear, and organized just like the app.</p>
+    <div class="hero-toc">
+      <a href="#getting-started">Getting Started</a>
+      <a href="#calendar">Calendar</a>
+      <a href="#chores">Chores & Tasks</a>
+      <a href="#points">Points & Dollars</a>
+      <a href="#rewards">Rewards</a>
+      <a href="#lists">Lists</a>
+      <a href="#settings">Settings</a>
+      <a href="#subscription">Subscription</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+</div>
+
+<!-- GUIDE -->
+<div class="guide">
+
+  <!-- ── 1. GETTING STARTED ── -->
+  <div class="section" id="getting-started">
+    <div class="section-header">
+      <div class="section-icon blue">🚀</div>
+      <div>
+        <div class="section-num">Section 01</div>
+        <div class="section-title">Getting Started</div>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="info-icon">💡</div>
+      <div class="info-body"><strong>Setup takes about 5 minutes.</strong> You'll create your account, add your family members, and be ready to go — no credit card required for the 14-day free trial.</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Create your account</div>
+          <div class="step-body">Go to <strong>familycrate.co/register</strong> and fill in your name, family name, email, and password. Your family name appears at the top of the app — something like "The Johnson Family" or "Hilton High-5" works great.</div>
+          <div class="step-tip"><strong>Tip:</strong> You can also add a shared family email — useful if younger kids don't have their own email yet but want notification access.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Add your family members</div>
+          <div class="step-body">Add everyone — parents, kids, even grandparents if they're part of the household. Each person gets a name, color, and optional email. Colors appear on the calendar and leaderboard, so pick something that feels right for each person.</div>
+          <div class="step-kids">👦 <strong>Kids don't need their own accounts.</strong> They access FamilyCrate through the family app — no separate login required.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Open FamilyCrate</div>
+          <div class="step-body">After registration you'll land directly in the app. Bookmark <strong>familycrate.co/app</strong> on every device — phone, tablet, and computer. The app works in any browser, no download needed.</div>
+          <div class="step-tip"><strong>iPad tip:</strong> For the best experience, open in Safari and use "Add to Home Screen" for a full-screen app feel.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Set your Parent PIN</div>
+          <div class="step-body">The first time you tap the Settings tab (⚙️), you'll be prompted to create a 4-digit PIN. This PIN protects parent-only settings like approving rewards, editing family members, and changing point values. Kids can use Home, Lists, and Points freely.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <div class="card-title">Works on everything</div>
+        <div class="card-body">Phone, tablet, laptop, desktop — FamilyCrate runs in any modern browser. No app store download needed.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Always in sync</div>
+        <div class="card-body">Changes on one device appear on all others in real time. Check a chore on the iPad and it updates immediately on Mom's phone.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">Your data is safe</div>
+        <div class="card-body">All data is stored securely. If you ever cancel, your family data is preserved for 30 days — nothing gets deleted immediately.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. CALENDAR ── -->
+  <div class="section" id="calendar">
+    <div class="section-header">
+      <div class="section-icon blue">📅</div>
+      <div>
+        <div class="section-num">Section 02</div>
+        <div class="section-title">The Family Calendar</div>
+      </div>
+    </div>
+
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.7;">The calendar is the heart of FamilyCrate. Every family member gets their own color-coded column, so you can see everyone's day at a glance — events, chores, and activities all in one place.</p>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-icon">📆</div>
+        <div class="card-title">Day View</div>
+        <div class="card-body">Shows the current day with time-blocked columns per family member. Chores appear at their assigned times alongside regular events. Best for daily use on phones and tablets.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗓️</div>
+        <div class="card-title">Week View</div>
+        <div class="card-body">Shows the full week across all members. Great for planning ahead and spotting conflicts. Toggle between Day and Week using the buttons in the top right.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">+</div>
+        <div class="step-content">
+          <div class="step-title">Adding an event</div>
+          <div class="step-body">Tap the <strong>+ Add</strong> button in the top right, or tap any empty time slot on the calendar. Fill in the title, date, start and end time, type (Family, School, or Activity), and who's involved. Tap Save.</div>
+          <div class="step-tip"><strong>Tip:</strong> Set "Who's involved" to specific people and the event will only appear in their column — keeping each person's view clean.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">↔</div>
+        <div class="step-content">
+          <div class="step-title">Recurring events</div>
+          <div class="step-body">Set any event to repeat Daily, Weekly, or Monthly. Weekly repeats on the same day of the week as the start date. Monthly repeats on the same date each month. Perfect for school schedules, activities, and routines.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">↕</div>
+        <div class="step-content">
+          <div class="step-title">Drag & drop rescheduling</div>
+          <div class="step-body">In Day view, grab any chore block and drag it up or down to reschedule it to a different time. Release to snap it to the new time slot. Great for adjusting on the fly.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="info-icon">🎉</div>
+      <div class="info-body"><strong>Reward events look different.</strong> When you approve a reward and add it to the calendar, it appears as a gold shimmer block — so kids can see their earned reward coming up and get excited about it.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Event Type</th><th>Color</th><th>Best Used For</th></tr>
+        <tr><td>Family</td><td>Shared teal</td><td>Dinners, trips, family nights</td></tr>
+        <tr><td>School</td><td>Blue</td><td>School days, co-op, classes</td></tr>
+        <tr><td>Activity</td><td>Light teal</td><td>Sports, lessons, clubs</td></tr>
+        <tr><td>Personal (member color)</td><td>Member's color</td><td>Assigned to one person only</td></tr>
+        <tr><td>Reward 🎉</td><td>Gold gradient</td><td>Earned rewards scheduled from the Rewards Store</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. CHORES ── -->
+  <div class="section" id="chores">
+    <div class="section-header">
+      <div class="section-icon green">✅</div>
+      <div>
+        <div class="section-num">Section 03</div>
+        <div class="section-title">Chores & Tasks</div>
+      </div>
+    </div>
+
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.7;">Chores in FamilyCrate are tied to specific people, time slots, and point values. Kids check them off themselves — no nagging required. Points are awarded automatically on completion.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Adding a chore</div>
+          <div class="step-body">Tap <strong>+ Add</strong> and select "Chore/Task." Give it a name, assign it to one or more family members, set a point value, time slot, and repeat schedule. Chores appear on the calendar at their assigned time in each person's column.</div>
+          <div class="step-tip"><strong>Point tip:</strong> Keep point values between 3–15 per chore and set your dollar rate lower (like $0.10/pt). A full week of chores might earn 150 pts = $15. Feels big to kids, manageable for you.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">How kids check off chores</div>
+          <div class="step-body">Kids tap their chore block on the calendar and tap the checkbox to mark it done. A checkmark appears and points are immediately added to their total. They can see their running point total in the member chip at the top of the screen.</div>
+          <div class="step-kids">👦 <strong>Kids love this part.</strong> Seeing their points go up instantly is the whole motivation loop. Make sure the leaderboard is visible so they can track each other.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Repeat schedules</div>
+          <div class="step-body">Set chores to repeat <strong>Daily</strong> (every day), <strong>Weekly</strong> (same day each week), or <strong>Monthly</strong> (same date each month). The chore reappears automatically — no re-adding needed. At the end of a reward period, chores reset to unchecked.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Categories</div>
+          <div class="step-body">Organize chores and tasks under custom categories (Chores, School, Personal, etc.). Manage categories in Settings. Each category gets its own tab in the Lists view, keeping things tidy as your list grows.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <div class="info-icon">⚠️</div>
+      <div class="warn-body"><strong>Important:</strong> Chores are different from calendar events. Chores earn points and reset with the reward period. Events are for scheduling only — they don't earn points or reset.</div>
+    </div>
+  </div>
+
+  <!-- ── 4. POINTS ── -->
+  <div class="section" id="points">
+    <div class="section-header">
+      <div class="section-icon gold">⭐</div>
+      <div>
+        <div class="section-num">Section 04</div>
+        <div class="section-title">Points & Dollar Values</div>
+      </div>
+    </div>
+
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.7;">FamilyCrate separates points from dollars intentionally. Kids see exciting high point numbers. Only parents see the dollar conversion — giving you full control over the real value without deflating the excitement.</p>
+
+    <div class="highlight">
+      <h3>The Points Philosophy</h3>
+      <p>High point values (5–15 per chore) feel motivating to kids. A lower dollar rate ($0.05–$0.15/pt) keeps payouts reasonable. A full week of effort earning 150 pts = $15 feels like a real achievement — and it is.</p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">⭐</div>
+        <div class="card-title">Earned Points</div>
+        <div class="card-body">Points earned by completing chores during the current reward period. Shown on the leaderboard and in each member's chip at the top of the screen.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛍️</div>
+        <div class="card-title">Spent Points</div>
+        <div class="card-body">Points used to redeem rewards. Shown below each member's earned total on the leaderboard. Resets when you start a new reward period.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💵</div>
+        <div class="card-title">Dollar Value</div>
+        <div class="card-body">Earned points × your dollar rate. Only visible to parents. Kids see points — you see dollars. Set your rate in Settings → Points & Dollars.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">$</div>
+        <div class="step-content">
+          <div class="step-title">Setting your point rate</div>
+          <div class="step-body">Go to <strong>Settings → Points & Dollars</strong>. Enter a dollar value per point (e.g. $0.10). Tap Save. This applies to all family members. You can adjust it anytime — changes take effect immediately on the leaderboard.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">🔄</div>
+        <div class="step-content">
+          <div class="step-title">The Reward Period</div>
+          <div class="step-body">The reward period is a defined window (default 14 days) during which points accumulate. At the end, you hit <strong>Reset Period</strong> in Settings — this clears completed chore checkmarks, zeroes spent points, and starts a fresh period. Think of it like a pay cycle.</div>
+          <div class="step-tip"><strong>Tip:</strong> Reset on the same day each period (every 2 weeks on Sunday, for example) so kids know when to expect payouts.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Rate</th><th>100 pts =</th><th>Good for</th></tr>
+        <tr><td>$0.05 / pt</td><td>$5.00</td><td>Younger kids, smaller chore sets</td></tr>
+        <tr><td>$0.10 / pt</td><td>$10.00</td><td>Most families — balanced and motivating</td></tr>
+        <tr><td>$0.25 / pt</td><td>$25.00</td><td>Teens with bigger responsibilities</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 5. REWARDS ── -->
+  <div class="section" id="rewards">
+    <div class="section-header">
+      <div class="section-icon gold">🎁</div>
+      <div>
+        <div class="section-num">Section 05</div>
+        <div class="section-title">Rewards Store</div>
+      </div>
+    </div>
+
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.7;">The Rewards Store is where kids spend their points. They browse available rewards, submit a request, and you approve. No surprise spending — every redemption goes through you.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Setting up rewards</div>
+          <div class="step-body">In Settings (PIN required), find the <strong>Rewards Store</strong> section. Tap <strong>+ Add reward</strong>. Give it a title, point cost, and icon. Good starter rewards: Screen time, Pick dinner, Stay up late, Movie pick, Cash out points, Skip a chore.</div>
+          <div class="step-tip"><strong>Tip:</strong> Set point costs high enough that rewards feel earned. If chores average 8 pts each, a reward costing 50 pts = about 6 chores worth of work. That feels meaningful.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">How kids request rewards</div>
+          <div class="step-body">Kids tap the <strong>Points</strong> tab (⭐) and then <strong>Rewards Store</strong>. They browse available rewards, tap one, select themselves, and submit a request. They can only request rewards they have enough points for — the button is disabled if they can't afford it.</div>
+          <div class="step-kids">👦 <strong>Kids see their available balance</strong> next to each member button when requesting. No guessing — they know exactly what they can afford.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Approving rewards (parent)</div>
+          <div class="step-body">Go to <strong>Settings</strong> (PIN required). Pending requests appear in the <strong>Reward Requests</strong> section on the right column. Each request shows the reward name, who requested it, point cost, and the date/time it was submitted.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <div class="step-title">Approve & Schedule</div>
+          <div class="step-body">When you tap <strong>Approve</strong>, a scheduling modal pops up with the reward title pre-filled. Pick a date and time to add it to the calendar as a 🎉 gold event — so the whole family sees it coming. Or tap <strong>Approve Only</strong> to approve without scheduling (good for rewards that need coordination, like "Have a friend over").</div>
+          <div class="step-kids">🎉 <strong>When a reward lands on the calendar</strong>, it shows as a glowing gold block with the kid's name. When they tap it, they see a festive "Earned Reward!" popup. It feels like a celebration.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info">
+      <div class="info-icon">📋</div>
+      <div class="info-body"><strong>Reward Bank</strong> — Approved rewards appear in the Reward Bank section in Settings. This shows all rewards approved during the current period. When you reset the period, the bank clears automatically. You can also schedule or archive individual rewards from the bank anytime.</div>
+    </div>
+  </div>
+
+  <!-- ── 6. LISTS ── -->
+  <div class="section" id="lists">
+    <div class="section-header">
+      <div class="section-icon green">📋</div>
+      <div>
+        <div class="section-num">Section 06</div>
+        <div class="section-title">Lists</div>
+      </div>
+    </div>
+
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:24px;line-height:1.7;">The Lists tab is your shared family to-do hub. Groceries, household tasks, school supplies — organized into categories that everyone can see and check off.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🛒</div>
+        <div class="card-title">Grocery List</div>
+        <div class="card-body">Add items anyone in the family needs. Check them off at the store. Items uncheck at the start of each period so the list stays fresh.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <div class="card-title">Custom Categories</div>
+        <div class="card-body">Create your own list categories in Settings → List Categories. School, Errands, Projects — whatever fits your family. Each gets its own tab.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">👤</div>
+        <div class="card-title">Assign Items</div>
+        <div class="card-body">Assign any list item to a specific family member. It shows up in their calendar column at the assigned time, just like a chore.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. SETTINGS ── -->
+  <div class="section" id="settings">
+    <div class="section-header">
+      <div class="section-icon blue">⚙️</div>
+      <div>
+        <div class="section-num">Section 07</div>
+        <div class="section-title">Settings & Parent Controls</div>
+      </div>
+    </div>
+
+    <div class="warn">
+      <div class="info-icon">🔒</div>
+      <div class="warn-body"><strong>Settings are PIN-protected.</strong> The first time you open Settings, you'll create a 4-digit PIN. After that, anyone who opens Settings must enter the PIN. Kids can use Home, Lists, and Points freely — Settings is yours alone.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Setting</th><th>PIN Required</th><th>What it does</th></tr>
+        <tr><td>Family Members</td><td><span class="badge pin">PIN</span></td><td>Add, edit, or remove family members. Update names, colors, photos, and emails.</td></tr>
+        <tr><td>Rewards Store</td><td><span class="badge pin">PIN</span></td><td>Create, edit, or delete rewards. Set point costs and icons.</td></tr>
+        <tr><td>List Categories</td><td><span class="badge pin">PIN</span></td><td>Add or remove list categories. Rename existing ones.</td></tr>
+        <tr><td>Reward Requests</td><td><span class="badge pin">PIN</span></td><td>Approve or decline pending reward requests from kids.</td></tr>
+        <tr><td>Reward Bank</td><td><span class="badge pin">PIN</span></td><td>View all approved rewards this period. Schedule or archive.</td></tr>
+        <tr><td>Points & Dollars</td><td><span class="badge pin">PIN</span></td><td>Set the dollar value per point. Tap Save to apply.</td></tr>
+        <tr><td>Reward Period</td><td><span class="badge pin">PIN</span></td><td>Set period length and reset the period to start fresh.</td></tr>
+        <tr><td>Account</td><td><span class="badge pin">PIN</span></td><td>Manage subscription, connect Google Calendar, log out.</td></tr>
+      </table>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">👤</div>
+        <div class="step-content">
+          <div class="step-title">Managing family members</div>
+          <div class="step-body">Tap any member in the Family Members section to edit their name, color, or email. Upload a profile photo by tapping "Upload photo" — square photos work best. Tap "Remove" to delete a member (this also removes their chore history, so use with care).</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">🔄</div>
+        <div class="step-content">
+          <div class="step-title">Resetting the reward period</div>
+          <div class="step-body">Go to <strong>Settings → Reward Period</strong> and tap <strong>Reset</strong>. Confirm the prompt. This clears all completed chore checkmarks (chores show as undone again), zeroes everyone's spent points, and starts the period clock from today. Earned history is preserved — nothing is permanently deleted.</div>
+          <div class="step-tip"><strong>Before resetting:</strong> Pay out any cash owed, approve any pending rewards, and archive the Reward Bank. Then reset for a clean slate.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 8. SUBSCRIPTION ── -->
+  <div class="section" id="subscription">
+    <div class="section-header">
+      <div class="section-icon blue">💳</div>
+      <div>
+        <div class="section-num">Section 08</div>
+        <div class="section-title">Subscription & Billing</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-title">Monthly — $19/month</div>
+        <div class="card-body">Billed monthly. Cancel anytime. Full access to all features for up to 8 family members.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">Yearly — $159/year</div>
+        <div class="card-body">$13.25/month — save 30%. Best value for families committed to the system. 2 months free compared to monthly.</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Question</th><th>Answer</th></tr>
+        <tr><td>When does my trial end?</td><td>14 days from registration. You'll see the countdown in Settings → Account → Manage.</td></tr>
+        <tr><td>Do I need a credit card for the trial?</td><td>No. Card is only required when you choose to subscribe.</td></tr>
+        <tr><td>What happens when the trial ends?</td><td>The app goes into read-only mode. Your data is safe. Subscribe to restore full access.</td></tr>
+        <tr><td>Can I switch from monthly to yearly?</td><td>Yes — use the billing portal in Settings → Account → Manage. Changes take effect at renewal.</td></tr>
+        <tr><td>How do I cancel?</td><td>Settings → Account → Manage → Cancel subscription. You keep access until the end of your billing period.</td></tr>
+        <tr><td>What happens to my data if I cancel?</td><td>All family data (members, chores, history) is preserved for 30 days after cancellation.</td></tr>
+        <tr><td>Can I update my payment method?</td><td>Yes — Settings → Account → Manage opens the Stripe billing portal where you can update cards.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 9. FAQ ── -->
+  <div class="section" id="faq">
+    <div class="section-header">
+      <div class="section-icon blue">❓</div>
+      <div>
+        <div class="section-num">Section 09</div>
+        <div class="section-title">Frequently Asked Questions</div>
+      </div>
+    </div>
+
+    <p style="font-size:15px;font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:20px;font-weight:500;">Why FamilyCrate?</p>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">How is FamilyCrate different from Cozi, FamilyWall, or other family apps? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Most family calendar apps stop at scheduling. Cozi and FamilyWall are solid for shared calendars but don't have chore tracking, points, or a rewards system. Apps like S'moresUp and Chores & Allowance Bot focus on chores and allowance but lack a real family calendar. FamilyCrate is the only app that combines all of it — calendar, chores, points, rewards store, and leaderboard — in one place. No switching between apps.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Why do points work better than cash allowance? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Points create a visible, immediate feedback loop. Kids see their total go up the moment they check a chore — that instant reward is powerful. Cash feels abstract until it's in their hand. Points also let you set high, exciting numbers (150 pts!) while keeping the actual dollar value manageable. And the leaderboard makes it competitive in the best way.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">We've tried chore charts before and they always fizzle out. Why will this be different? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Three things make FamilyCrate stick where charts don't: (1) It lives on devices everyone already uses every day. (2) The rewards store gives kids something real to work toward — not just a gold star. (3) The leaderboard creates natural sibling competition. The system is designed around what actually motivates kids, not what looks good on a refrigerator.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Is FamilyCrate good for homeschool families? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">It was actually built by a homeschool dad for exactly this use case. The calendar handles co-op schedules, class times, and activities. Chores can include school tasks like reading assignments. The flexible categories let you organize everything from academics to household duties in one place.</div>
+      </div>
+    </div>
+
+    <div class="divider"/>
+
+    <p style="font-size:15px;font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:20px;font-weight:500;">Using the App</p>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">How do I get started in 5 minutes? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">1. Register at familycrate.co/register — takes 2 minutes. 2. Add your family members with their colors. 3. Set your PIN in Settings. 4. Add 3–5 recurring chores with point values. 5. Create 3–4 rewards in the Rewards Store. That's it — you're live. Add more over time as you find what works.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Do kids need their own login? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">No. Kids access FamilyCrate through the same family app — they just select their name when checking off chores or requesting rewards. There's no separate kid account to manage. On a shared device like a family iPad, everyone uses the same app.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">How do reward periods work? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">A reward period is the window during which points accumulate — default is 14 days. At the end, you reset the period (Settings → Reward Period → Reset). This clears chore checkmarks so chores show as undone again, zeroes spent points, and starts the clock fresh. Think of it like a two-week pay cycle. Before resetting, pay out any cash owed and approve pending rewards.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Can I use FamilyCrate on multiple devices at the same time? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Yes — that's one of FamilyCrate's strengths. Open it on the family iPad, your phone, and your MacBook simultaneously. Changes sync in real time. Check a chore on the iPad and it updates on Mom's phone instantly. No refresh needed.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">What's the difference between a chore and an event? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Chores earn points and reset with the period. They're assigned to specific people and appear as checkable blocks on the calendar. Events are for scheduling — they appear on the calendar for everyone to see but don't earn points and don't reset. Use chores for anything you want kids to earn points for. Use events for appointments, activities, and family schedule items.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Can kids request a reward they can't afford? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">No. The request button is disabled if a kid doesn't have enough points. Their available balance (earned minus already-spent, including pending requests) is shown next to their name when they browse the rewards store. No sneaking in requests they haven't earned.</div>
+      </div>
+    </div>
+
+    <div class="divider"/>
+
+    <p style="font-size:15px;font-family:'Playfair Display',serif;color:var(--ink);margin-bottom:20px;font-weight:500;">Subscription & Purchasing</p>
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">What's included in the free trial? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Everything. Full access to all features — calendar, chores, points, rewards store, leaderboard, lists, and Google Calendar sync — for 14 days. No credit card required. No feature limits. The trial is the full product.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">What happens when my trial ends? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">FamilyCrate goes into read-only mode — you can still see your data but can't add or edit anything. Your family data is completely safe. Subscribe at any time to restore full access. Nothing is deleted.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Is there a family limit? How many people can I add? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Up to 8 family members on all plans. That covers even large households and blended families. If you need more, contact us at hello@familycrate.co.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Can I cancel anytime? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Yes — no contracts, no commitment. Cancel from Settings → Account → Manage at any time. You keep full access until the end of your current billing period. No prorated refunds on the remaining period, but you'll never be charged again after cancelling.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Is the yearly plan worth it? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">If you plan to use FamilyCrate for more than 8 months, yes — you save $69 compared to monthly. Most families who get through the first two weeks find it becomes part of their daily routine. The yearly plan also includes priority support and early access to new features.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggle(this)">Is my payment information secure? <span class="faq-arrow">▾</span></div>
+        <div class="faq-a">Yes. All payments are processed by Stripe — the same payment infrastructure used by Amazon, Google, and millions of other businesses. FamilyCrate never stores your card details. Stripe handles all payment security with bank-level encryption.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="highlight">
+    <h3>Still have questions?</h3>
+    <p>Email us at <strong style="color:#E8C060;">hello@familycrate.co</strong> — Cliff, the founder, reads every message personally and usually responds within a few hours.</p>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>© 2026 FamilyCrate · <a href="https://www.familycrate.co">familycrate.co</a> · <a href="mailto:hello@familycrate.co">hello@familycrate.co</a></p>
+</div>
+
+<script>
+function toggle(el){
+  const item=el.closest('.faq-item');
+  item.classList.toggle('open');
+}
+</script>
+</body>
+</html>
