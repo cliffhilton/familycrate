@@ -233,7 +233,7 @@ const CSS = `
   --band:#EDF1F5;
   --sh:0 2px 12px rgba(26,42,56,.06);--sh-lg:0 8px 32px rgba(26,42,56,.13);
 }
-html,body{height:100%;overflow:hidden;}
+html{font-size:125%;}html,body{height:100%;overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 ::-webkit-scrollbar{width:3px;height:3px;}
 ::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px;}
