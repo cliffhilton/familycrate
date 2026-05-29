@@ -1,5 +1,6 @@
 // ─── FamilyCrate API Client ───────────────────────────────────────────────────
 const BASE = import.meta.env.VITE_API_URL || "";
+import { supabase } from "./supabase.js";
 
 function getToken() { return localStorage.getItem("fc_token") || ""; }
 function setToken(t) { localStorage.setItem("fc_token", t); }
@@ -118,11 +119,16 @@ function transformFamily(data) {
 
 // ─── Auth ──────────────────────────────────────────────────────────────────────
 export async function apiLogin(email, password) {
-  const data = await req("POST", "/api/auth/login", { email, password });
-  setToken(data.session.access_token);
-  if(data.session.refresh_token) localStorage.setItem("fc_refresh_token", data.session.refresh_token);
+  // Use Supabase directly for persistent session management
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(error.message);
+  setToken(authData.session.access_token);
+  if(authData.session.refresh_token) localStorage.setItem("fc_refresh_token", authData.session.refresh_token);
+  // Also get family data from our backend
+  const data = await req("GET", "/api/auth/me");
   localStorage.setItem("fc_family_id", data.family?.id || "");
-  return data;
+  if(data.family?.family_name) localStorage.setItem("fc_family_name", data.family.family_name);
+  return { session: authData.session, family: data.family };
 }
 
 export async function apiRegister(payload) {

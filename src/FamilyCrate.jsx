@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { supabase } from "./supabase.js";
 import {
   apiLogin, apiLogout, apiMe, apiGetFamily,
   apiAddMember, apiUpdateMember, apiDeleteMember,
@@ -919,37 +920,41 @@ export default function AppShell() {
   const [appData, setAppData]     = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("fc_token");
-    const rt = localStorage.getItem("fc_refresh_token");
-    if (!token && !rt) { setAuthState("login"); return; }
-    // If no access token but we have a refresh token, try to refresh first
-    const proceed = () => apiMe()
-      .then(({ family }) => {
+    if (!supabase) { setAuthState("login"); return; }
+
+    const loadApp = async (session) => {
+      if (!session) { setAuthState("login"); return; }
+      // Store token for API calls
+      localStorage.setItem("fc_token", session.access_token);
+      if (session.refresh_token) localStorage.setItem("fc_refresh_token", session.refresh_token);
+      try {
+        const { family } = await apiMe();
         const isOwner = family?.owner_email === "cliffhilton@gmail.com";
-        const expired  = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
+        const expired = !isOwner && family?.subscription_status === "trialing" && family?.trial_ends_at && new Date(family.trial_ends_at) < new Date();
         const cancelled = !isOwner && family?.subscription_status === "cancelled";
         if (expired || cancelled) { setAuthState("expired"); return; }
-        return apiGetFamily().then(data => { if(data.family_name) localStorage.setItem("fc_family_name", data.family_name); setAppData(data); setAuthState("app"); });
-      })
-      .catch(() => { setAuthState("login"); });
-    if (!token && rt) {
-      // Try refresh before showing login
-      fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: rt }),
-      }).then(r=>r.json()).then(data => {
-        if (data?.access_token) {
-          localStorage.setItem("fc_token", data.access_token);
-          if (data.refresh_token) localStorage.setItem("fc_refresh_token", data.refresh_token);
-          proceed();
-        } else {
-          setAuthState("login");
-        }
-      }).catch(() => setAuthState("login"));
-    } else {
-      proceed();
-    }
+        const data = await apiGetFamily();
+        if(data.family_name) localStorage.setItem("fc_family_name", data.family_name);
+        localStorage.setItem("fc_family_id", family?.id || "");
+        setAppData(data);
+        setAuthState("app");
+      } catch(e) { setAuthState("login"); }
+    };
+
+    // Check existing session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadApp(session);
+    });
+
+    // Listen for auth changes — Supabase auto-refreshes tokens
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        localStorage.setItem("fc_token", session.access_token);
+        if (session.refresh_token) localStorage.setItem("fc_refresh_token", session.refresh_token);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleLogin = () => {
