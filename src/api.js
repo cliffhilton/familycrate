@@ -139,8 +139,12 @@ export async function apiMe() {
   return req("GET", "/api/auth/me");
 }
 
-export function apiLogout() {
+export async function apiLogout() {
   clearToken();
+  localStorage.removeItem("fc_refresh_token");
+  localStorage.removeItem("fc_family_name");
+  localStorage.removeItem("fc_family_id");
+  if (supabase) await supabase.auth.signOut();
 }
 
 // ─── Family data ──────────────────────────────────────────────────────────────
