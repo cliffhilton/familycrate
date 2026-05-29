@@ -207,6 +207,25 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
   footer{flex-direction:column;align-items:center;text-align:center;}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  (async()=>{
+    try {
+      const sb = supabase.createClient(
+        'https://btoklvfwjvtzzluiqjcz.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0b2tsdmZ3anZ0enpsdWlxamN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDcyMDYsImV4cCI6MjA5MjE4MzIwNn0.UzSM9Rf7HV5pObg0dUr0RRjvWTFnpBhuDlhRtUVvtfc'
+      );
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        // Already logged in — swap Login button to Open App
+        document.addEventListener('DOMContentLoaded', ()=>{
+          const links = document.querySelectorAll('a[href*="/login"], a[href*="login"]');
+          links.forEach(l=>{ l.textContent='Open App'; l.href='/app/'; l.style.background='var(--sky)'; l.style.color='#fff'; });
+        });
+      }
+    } catch(e) {}
+  })();
+</script>
 </head>
 <body>
 
