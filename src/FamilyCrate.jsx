@@ -1453,7 +1453,7 @@ function FamilyCrate({ apiData, onLogout }) {
   return (
     <>
       <style>{CSS}</style>
-      <div className="app" style={{zoom:"1.15"}}>
+      <div className="app" style={{zoom:"1.25"}}>
 
         {/* Header */}
         <header className="hdr">
