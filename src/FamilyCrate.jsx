@@ -233,11 +233,11 @@ const CSS = `
   --band:#EDF1F5;
   --sh:0 2px 12px rgba(26,42,56,.06);--sh-lg:0 8px 32px rgba(26,42,56,.13);
 }
-html{font-size:125%;}html,body{height:100%;overflow:hidden;}
+html,body{height:100%;overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 ::-webkit-scrollbar{width:3px;height:3px;}
 ::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px;}
-.app{display:flex;flex-direction:column;height:100dvh;width:100%;}
+.app{display:flex;flex-direction:column;height:100dvh;width:100%;font-size:112.5%;}
 
 /* Header */
 .hdr{display:flex;align-items:center;padding:8px 14px;background:var(--surf);border-bottom:1px solid var(--bdr);flex-shrink:0;gap:8px;box-shadow:var(--sh);}
