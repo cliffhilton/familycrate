@@ -26,3 +26,4 @@ dist-ssr
 server/.env
 server/node_modules
 !.env
+server/.env
