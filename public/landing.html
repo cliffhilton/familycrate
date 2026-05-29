@@ -220,7 +220,11 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
         // Already logged in — swap Login button to Open App
         document.addEventListener('DOMContentLoaded', ()=>{
           const links = document.querySelectorAll('a[href*="/login"], a[href*="login"]');
-          links.forEach(l=>{ l.textContent='Open App'; l.href='/app/'; l.style.background='var(--sky)'; l.style.color='#fff'; });
+          links.forEach(l=>{ 
+            l.textContent='Open App →'; 
+            l.href='/app/'; 
+            l.setAttribute('style','text-decoration:none;color:#fff;font-size:14px;font-weight:600;background:#3A6A88;padding:8px 18px;border-radius:100px;');
+          });
         });
       }
     } catch(e) {}
