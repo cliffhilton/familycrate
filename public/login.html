@@ -65,6 +65,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
 .or-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px;}
 .or-divider::before,.or-divider::after{content:'';flex:1;border-top:1px solid var(--bdr);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const sb = supabase.createClient(
+  'https://btoklvfwjvtzzluiqjcz.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0b2tsdmZ3anZ0enpsdWlxamN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDcyMDYsImV4cCI6MjA5MjE4MzIwNn0.UzSM9Rf7HV5pObg0dUr0RRjvWTFnpBhuDlhRtUVvtfc'
+);
+// If already logged in, redirect to app
+sb.auth.getSession().then(({data:{session}})=>{ if(session) window.location.href='/app/'; });
+</script>
 </head>
 <body>
 <div class="page">
@@ -176,27 +185,31 @@ async function signIn() {
   errBanner.style.display = 'none';
 
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    // Sign in via Supabase for persistent session
+    const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
+    if (authError) throw new Error(authError.message);
+
+    // Store token for API calls
+    localStorage.setItem('fc_token', authData.session.access_token);
+    localStorage.setItem('fc_refresh_token', authData.session.refresh_token);
+
+    // Get family data to check subscription
+    const meRes = await fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + authData.session.access_token }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Sign in failed');
+    const meData = await meRes.json();
+    const family = meData.family;
+    localStorage.setItem('fc_family_id', family?.id || '');
+    if (family?.family_name) localStorage.setItem('fc_family_name', family.family_name);
 
-    // Store token and redirect
-    localStorage.setItem('fc_token', data.session.access_token);
-    localStorage.setItem('fc_family_id', data.family?.id || '');
-
-    // If trial expired, go to subscription page
-    const family = data.family;
-    const isExpired = family?.subscription_status === 'trialing' &&
+    const isOwner = family?.owner_email === 'cliffhilton@gmail.com';
+    const isExpired = !isOwner && family?.subscription_status === 'trialing' &&
       new Date(family.trial_ends_at) < new Date();
 
-    if (isExpired || family?.subscription_status === 'cancelled') {
-      window.location.href = '/subscribe';
+    if (isExpired || (!isOwner && family?.subscription_status === 'cancelled')) {
+      window.location.href = '/subscription.html';
     } else {
-      window.location.href = '/app';
+      window.location.href = '/app/';
     }
   } catch (err) {
     errMsg.textContent = err.message;
