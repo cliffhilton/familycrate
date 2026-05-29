@@ -254,8 +254,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .mchip:active{transform:scale(.96);}
 .mchip.active{color:#fff;border-color:transparent;}
 .mchip.active .mchip-name{color:#fff;}
-.mchip-name{font-size:12px;font-weight:500;color:var(--ink2);}
-.mchip-pts{font-size:9px;font-weight:600;padding:2px 6px;border-radius:100px;background:var(--gold);color:#fff;margin-left:2px;white-space:nowrap;}
+.mchip-name{font-size:14px;font-weight:500;color:var(--ink2);}
+.mchip-pts{font-size:11px;font-weight:600;padding:2px 7px;border-radius:100px;background:var(--gold);color:#fff;margin-left:2px;white-space:nowrap;}
 .mchip.active .mchip-pts{background:rgba(0,0,0,.15);}
 .all-chip{display:flex;align-items:center;padding:4px 12px;border-radius:100px;background:var(--bg);border:1.5px solid var(--bdr);cursor:pointer;font-size:12px;font-weight:500;color:var(--ink2);transition:all .15s;flex-shrink:0;}
 .all-chip.active{background:var(--sky);border-color:var(--sky);color:#fff;}
@@ -332,8 +332,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 .gutter-hdr{width:46px;flex-shrink:0;border-right:1px solid var(--bdr);}
 .col-hdr{display:flex;align-items:center;gap:5px;padding:5px 8px;flex:1;border-right:1px solid var(--bdr);min-width:0;overflow:hidden;}
 .col-hdr:last-child{border-right:none;}
-.col-hdr-name{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.col-hdr-pts{font-size:9px;font-weight:700;padding:2px 6px;border-radius:100px;color:#fff;white-space:nowrap;flex-shrink:0;}
+.col-hdr-name{font-size:14px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.col-hdr-pts{font-size:11px;font-weight:700;padding:2px 7px;border-radius:100px;color:#fff;white-space:nowrap;flex-shrink:0;}
 .wdh{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;flex:1;min-width:0;cursor:pointer;}
 .wdh-day{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
 .wdh-num{font-size:13px;font-weight:500;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
@@ -354,8 +354,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 /* Timed block */
 .tblock{position:absolute;border-radius:6px;padding:3px 5px;cursor:pointer;overflow:hidden;border-left:3px solid transparent;text-align:left;transition:filter .15s,box-shadow .15s;}
 .tblock:hover{filter:brightness(.92);box-shadow:0 2px 8px rgba(0,0,0,.12);}
-.tblock-title{font-size:11px;font-weight:500;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tblock-time{font-size:9px;opacity:.8;margin-top:1px;}
+.tblock-title{font-size:13px;font-weight:500;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tblock-time{font-size:11px;opacity:.8;margin-top:1px;}
 .tblock-note{font-size:9px;opacity:.75;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tblock-chk{position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:3px;border:1.5px solid rgba(255,255,255,.5);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;}
 .tblock-chk.on{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.85);}
@@ -1453,7 +1453,7 @@ function FamilyCrate({ apiData, onLogout }) {
   return (
     <>
       <style>{CSS}</style>
-      <div className="app" style={{zoom:"1.25",minHeight:"calc(100vh / 1.25)"}}>
+      <div className="app">
 
         {/* Header */}
         <header className="hdr">
