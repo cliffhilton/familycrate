@@ -924,7 +924,6 @@ export default function AppShell() {
 
     const loadApp = async (session) => {
       if (!session) { setAuthState("login"); return; }
-      // Store token for API calls
       localStorage.setItem("fc_token", session.access_token);
       if (session.refresh_token) localStorage.setItem("fc_refresh_token", session.refresh_token);
       try {
@@ -936,9 +935,22 @@ export default function AppShell() {
         const data = await apiGetFamily();
         if(data.family_name) localStorage.setItem("fc_family_name", data.family_name);
         localStorage.setItem("fc_family_id", family?.id || "");
+        localStorage.setItem("fc_cached_data", JSON.stringify(data));
         setAppData(data);
         setAuthState("app");
-      } catch(e) { setAuthState("login"); }
+      } catch(e) {
+        // API failed — try cached data before showing login
+        const cached = localStorage.getItem("fc_cached_data");
+        if (cached) {
+          try {
+            setAppData(JSON.parse(cached));
+            setAuthState("app");
+            return;
+          } catch(e2) {}
+        }
+        // No cache — show login only if no session
+        setAuthState("login");
+      }
     };
 
     // Check existing session first
