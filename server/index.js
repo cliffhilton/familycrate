@@ -34,10 +34,35 @@ app.use(cors({
 app.use(express.json());
 
 // Serve static files from the public folder
-app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/public", {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith(".html")) {
+      // Never cache HTML files
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+  }
+}));
 
 // Serve React app static assets (JS, CSS, etc.) from dist/ at /app
-app.use("/app", express.static("./dist"));
+app.use("/app", express.static("./dist", {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, path) => {
+    if (path.endsWith(".html")) {
+      // Never cache HTML - always fetch fresh
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    } else if (path.match(/\.(js|css)$/)) {
+      // JS/CSS have hashed filenames - cache forever
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    }
+  }
+}));
 
 // Root route — serve landing page
 app.get("/", (req, res) => res.sendFile("landing.html", { root: __dirname + "/public" }));
