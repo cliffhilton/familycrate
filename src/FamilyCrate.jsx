@@ -953,18 +953,41 @@ export default function AppShell() {
       }
     };
 
-    // Use onAuthStateChange as single source of truth
-    let initialized = false;
+    // Get session once, don't use onAuthStateChange for initial load
+    let done = false;
+    const finish = (session) => {
+      if (done) return;
+      done = true;
+      loadApp(session);
+    };
+
+    // Timeout fallback — if Supabase takes too long, use cache or show login
+    const timeout = setTimeout(() => {
+      if (!done) {
+        done = true;
+        const cached = localStorage.getItem("fc_cached_data");
+        const token = localStorage.getItem("fc_token");
+        if (cached && token) {
+          try { setAppData(JSON.parse(cached)); setAuthState("app"); return; } catch(e) {}
+        }
+        setAuthState("login");
+      }
+    }, 4000);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
+      finish(session);
+    }).catch(() => {
+      clearTimeout(timeout);
+      finish(null);
+    });
+
+    // Only use onAuthStateChange for token updates after initial load
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!initialized) {
-        initialized = true;
-        loadApp(session);
-      } else if (session) {
-        // Just update tokens on refresh, don't reload app
+      if (_event === "SIGNED_OUT") { setAuthState("login"); return; }
+      if (session) {
         localStorage.setItem("fc_token", session.access_token);
         if (session.refresh_token) localStorage.setItem("fc_refresh_token", session.refresh_token);
-      } else if (!session && _event === "SIGNED_OUT") {
-        setAuthState("login");
       }
     });
 
