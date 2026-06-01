@@ -953,16 +953,18 @@ export default function AppShell() {
       }
     };
 
-    // Check existing session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      loadApp(session);
-    });
-
-    // Listen for auth changes — Supabase auto-refreshes tokens
+    // Use onAuthStateChange as single source of truth
+    let initialized = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+      if (!initialized) {
+        initialized = true;
+        loadApp(session);
+      } else if (session) {
+        // Just update tokens on refresh, don't reload app
         localStorage.setItem("fc_token", session.access_token);
         if (session.refresh_token) localStorage.setItem("fc_refresh_token", session.refresh_token);
+      } else if (!session && _event === "SIGNED_OUT") {
+        setAuthState("login");
       }
     });
 
