@@ -704,7 +704,32 @@ function MemberModal({ member, onSave, onDelete, onClose }) {
   const [email,setEmail] = useState(member?.email??"");
   const fileRef = useRef();
   const COLORS=["#E07830","#3A9A5A","#2A9090","#CC3A3A","#3A6ACC","#9A4AAA","#AA7030","#3A80AA","#AA3A6A","#6A8A3A"];
-  const handlePhoto=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>setPhoto(ev.target.result); r.readAsDataURL(f); };
+  const handlePhoto=async e=>{ 
+    const f=e.target.files[0]; 
+    if(!f) return;
+    try {
+      // Resize to max 200x200 before upload
+      const canvas=document.createElement('canvas');
+      const img=new Image();
+      img.src=URL.createObjectURL(f);
+      await new Promise(res=>img.onload=res);
+      const size=200;
+      const scale=Math.min(size/img.width,size/img.height,1);
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      canvas.toBlob(async blob=>{
+        const fileName=`${Date.now()}.jpg`;
+        const { data, error } = await supabase.storage.from('avatars').upload(fileName, blob, { contentType:'image/jpeg', upsert:true });
+        if (error) { console.error('Upload error:', error); return; }
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        setPhoto(publicUrl);
+      }, 'image/jpeg', 0.85);
+    } catch(err) {
+      // Fallback to base64 if storage fails
+      const r=new FileReader(); r.onload=ev=>setPhoto(ev.target.result); r.readAsDataURL(f);
+    }
+  };
   const save=()=>{ if(!name.trim()) return; onSave({name:name.trim(),color,photo,email,phone:""}); };
   return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{member?"Edit member":"Add member"}</div>
     <div className="mrow"><div className="mlbl">Photo</div>
