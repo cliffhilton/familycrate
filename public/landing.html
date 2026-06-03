@@ -211,7 +211,7 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-  (async()=>{
+  document.addEventListener('DOMContentLoaded', async ()=>{
     try {
       const sb = supabase.createClient(
         'https://btoklvfwjvtzzluiqjcz.supabase.co',
@@ -230,7 +230,7 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
       const btn = document.getElementById('nav-login-btn');
       if (btn) btn.style.visibility = 'visible';
     }
-  })();
+  });
 </script>
 </head>
 <body>
