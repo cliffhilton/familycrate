@@ -187,7 +187,7 @@ function toDbMember(d) {
   const o = {};
   if (d.name      !== undefined) o.name       = d.name;
   if (d.color     !== undefined) o.color      = d.color;
-  if (d.photo     !== undefined) o.photo      = d.photo;
+  if (d.photo     !== undefined) o.photo_url  = d.photo;
   if (d.email     !== undefined) o.email      = d.email;
   if (d.role      !== undefined) o.role       = d.role;
   if (d.sortOrder !== undefined) o.sort_order = d.sortOrder;
