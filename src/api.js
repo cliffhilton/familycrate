@@ -54,7 +54,7 @@ function transformMember(m) {
     id:         m.id,
     name:       m.name,
     color:      m.color,
-    photo:      m.photo || null,
+    photo:      m.photo_url || m.photo || null,
     email:      m.email || "",
     role:       m.role,
     sort_order: m.sort_order,
