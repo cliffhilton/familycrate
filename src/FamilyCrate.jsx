@@ -1939,6 +1939,9 @@ function FamilyCrate({ apiData, onLogout }) {
                 }
               </div>
               <button className="sign-out-btn" onClick={onLogout}>Sign out</button>
+              <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:16,paddingBottom:4}}>
+                <a href="https://www.instagram.com/familycrate/" target="_blank" rel="noopener noreferrer" style={{color:"var(--muted)",display:"flex",alignItems:"center",gap:5,fontSize:12,textDecoration:"none"}}><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".5" fill="currentColor"/></svg>@familycrate</a>
+              </div>
             </div>
           </div>
         )}
