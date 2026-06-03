@@ -1405,6 +1405,9 @@ function FamilyCrate({ apiData, onLogout }) {
     }).catch(console.error);
   };
   const [rewardScheduleModal,setRewardScheduleModal] = useState(null);
+  const [archivedReqs,setArchivedReqs] = useState(()=>{try{return JSON.parse(localStorage.getItem("fc_archived_reqs")||"[]");}catch{return [];}});
+  const [showArchive,setShowArchive] = useState(false);
+  const archiveReq=id=>{const next=[...archivedReqs,id];setArchivedReqs(next);localStorage.setItem("fc_archived_reqs",JSON.stringify(next));};
   const approveReq=id=>{
     const req=redeemReqs.find(r=>r.id===id);
     const rw=rewards.find(r=>r.id===req?.rewardId);
@@ -1878,7 +1881,11 @@ function FamilyCrate({ apiData, onLogout }) {
                     );})}
                   </div>
                 )}
-                {(()=>{const approvedReqs=redeemReqs.filter(r=>r.status==="approved"&&(!r.created_at||r.created_at.slice(0,10)>=periodStart)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));return approvedReqs.length>0&&(
+                {(()=>{
+                  const allApproved=redeemReqs.filter(r=>r.status==="approved"&&(!r.created_at||r.created_at.slice(0,10)>=periodStart)).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+                  const activeReqs=allApproved.filter(r=>!archivedReqs.includes(r.id));
+                  const archivedList=allApproved.filter(r=>archivedReqs.includes(r.id));
+                  return(
                   <div className="set-sec">
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                       <div>
@@ -1886,14 +1893,29 @@ function FamilyCrate({ apiData, onLogout }) {
                         <div className="set-sec-sub">Approved redemptions this period</div>
                       </div>
                     </div>
-                    {approvedReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
-                      <div key={req.id} className="req-card" style={{opacity:0.85}}>
+                    {activeReqs.length===0&&<div style={{fontSize:13,color:"var(--muted)",textAlign:"center",padding:"12px 0"}}>🎉 All caught up!{archivedList.length>0&&<span> · <button onClick={()=>setShowArchive(p=>!p)} style={{background:"none",border:"none",color:"var(--sky)",fontSize:13,cursor:"pointer",fontFamily:"DM Sans,sans-serif",textDecoration:"underline"}}>{showArchive?"Hide":"View"} archive ({archivedList.length})</button></span>}</div>}
+                    {activeReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                      <div key={req.id} className="req-card" style={{opacity:0.85,flexWrap:"wrap",gap:6}}>
                         <div style={{color:"var(--green)"}}><RewardIcon icon={rw.icon}/></div>
                         <div className="req-body">
                           <div className="req-name">{rw.title}</div>
-                          <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : ""}</div>
+                          <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : ""}</div>
                         </div>
-                        <div style={{fontSize:11,fontWeight:600,color:"var(--green)",padding:"4px 8px",background:"#D4EDD4",borderRadius:6}}>✓ Approved</div>
+                        <div style={{display:"flex",gap:6,marginLeft:"auto"}}>
+                          <button onClick={()=>setRewardScheduleModal({reqId:req.id,title:"🎉 "+mem.name+" — "+rw.title,memberId:mem.id,memberColor:mem.color,scheduleOnly:true})} style={{padding:"4px 10px",borderRadius:7,border:"1.5px solid var(--sky)",background:"none",color:"var(--sky)",fontFamily:"DM Sans,sans-serif",fontSize:11,fontWeight:500,cursor:"pointer"}}>Schedule</button>
+                          <button onClick={()=>archiveReq(req.id)} style={{padding:"4px 10px",borderRadius:7,border:"1.5px solid var(--bdr)",background:"none",color:"var(--muted)",fontFamily:"DM Sans,sans-serif",fontSize:11,cursor:"pointer"}}>Archive</button>
+                        </div>
+                      </div>
+                    );})}
+                    {archivedList.length>0&&activeReqs.length>0&&<button onClick={()=>setShowArchive(p=>!p)} style={{background:"none",border:"none",color:"var(--sky)",fontSize:12,cursor:"pointer",fontFamily:"DM Sans,sans-serif",textDecoration:"underline",padding:"4px 0"}}>{showArchive?"Hide":"View"} archive ({archivedList.length})</button>}
+                    {showArchive&&archivedList.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
+                      <div key={req.id} className="req-card" style={{opacity:0.5}}>
+                        <div style={{color:"var(--muted)"}}><RewardIcon icon={rw.icon}/></div>
+                        <div className="req-body">
+                          <div className="req-name">{rw.title}</div>
+                          <div className="req-who">{mem.name} · {rw.points} pts{req.created_at ? " · "+new Date(req.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : ""}</div>
+                        </div>
+                        <div style={{fontSize:11,color:"var(--muted)"}}>Archived</div>
                       </div>
                     );})}
                   </div>
