@@ -1473,7 +1473,7 @@ function FamilyCrate({ apiData, onLogout }) {
     const colEvs=eventsOnDate(ds).filter(ev=>ev.memberIds.includes(mid)||ev.memberIds.length===0);
     const colItems=itemsForMemberOnDate(mid,ds);
     const blocks=[];
-    colEvs.forEach(ev=>{if(ev.source==="google")return; // Google events shown in week view only
+    colEvs.forEach(ev=>{if(ev.source==="google"&&!pinUnlocked)return;
     const sm=timeToMinutes(ev.time);const dur=ev.duration||60;if(sm<DAY_START||sm>=DAY_END)return;const evIsReward=ev.title?.startsWith("🎉");if(evIsReward)console.log("REWARD BLOCK FOUND:",ev.title,evIsReward);blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR,type:ev.type,isReward:evIsReward});});
     colItems.forEach(item=>{if(!item.time)return;const sm=timeToMinutes(item.time);const dur=item.duration||30;if(sm<DAY_START||sm>=DAY_END)return;blocks.push({id:`it-${item.id}`,itemId:item.id,kind:"item",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:item.text,time:item.time,note:item.note,points:item.points,color:members.find(m=>m.id===mid)?.color||"#8A8A8A",done:isDone(item.id,mid,ds),memberId:mid});});
     return layoutBlocks(blocks);
@@ -1663,7 +1663,7 @@ function FamilyCrate({ apiData, onLogout }) {
                       const seenItems=new Set(),allBlocks=[];
                       // Events for this day
                       const evs=eventsOnDate(ds).filter(ev=>filterMids.size===0?true:(ev.memberIds.some(id=>filterMids.has(id))||ev.memberIds.length===0));
-                      evs.forEach(ev=>{const sm=timeToMinutes(ev.time);if(sm<DAY_START||sm>=DAY_END)return;allBlocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(ev.duration||60),startMins:sm,title:ev.title,time:ev.time,color:ev.source==="google"?"#4A90D9":ev.color||SHARED_COLOR,isGoogle:ev.source==="google"});});
+                      evs.filter(ev=>ev.source!=="google"||pinUnlocked).forEach(ev=>{const sm=timeToMinutes(ev.time);if(sm<DAY_START||sm>=DAY_END)return;allBlocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(ev.duration||60),startMins:sm,title:ev.title,time:ev.time,color:ev.source==="google"?"#4A90D9":ev.color||SHARED_COLOR,isGoogle:ev.source==="google"});});
                       // Items — one block per unique item (not per member)
                       const midsToShow=filterMids.size===0?members.map(m=>m.id):[...filterMids];
                       midsToShow.forEach(mid=>{
