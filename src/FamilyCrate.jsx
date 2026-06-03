@@ -1474,7 +1474,7 @@ function FamilyCrate({ apiData, onLogout }) {
     const colItems=itemsForMemberOnDate(mid,ds);
     const blocks=[];
     colEvs.forEach(ev=>{if(ev.source==="google"&&!["admin","mom","dad"].includes(members.find(x=>x.id===mid)?.role))return;
-    const sm=timeToMinutes(ev.time);const dur=ev.duration||60;if(sm<DAY_START||sm>=DAY_END)return;const evIsReward=ev.title?.startsWith("🎉");if(evIsReward)console.log("REWARD BLOCK FOUND:",ev.title,evIsReward);blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.color||SHARED_COLOR,type:ev.type,isReward:evIsReward});});
+    const sm=timeToMinutes(ev.time);const dur=ev.duration||60;if(sm<DAY_START||sm>=DAY_END)return;const evIsReward=ev.title?.startsWith("🎉");if(evIsReward)console.log("REWARD BLOCK FOUND:",ev.title,evIsReward);blocks.push({id:`ev-${ev.id}`,evId:ev.id,kind:"event",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:ev.title,time:ev.time,color:ev.source==="google"?"#4A90D9":ev.color||SHARED_COLOR,type:ev.type,isReward:evIsReward,isGoogle:ev.source==="google"});});
     colItems.forEach(item=>{if(!item.time)return;const sm=timeToMinutes(item.time);const dur=item.duration||30;if(sm<DAY_START||sm>=DAY_END)return;blocks.push({id:`it-${item.id}`,itemId:item.id,kind:"item",top:minutesToTop(sm),height:durationToPx(dur),startMins:sm,dur,title:item.text,time:item.time,note:item.note,points:item.points,color:members.find(m=>m.id===mid)?.color||"#8A8A8A",done:isDone(item.id,mid,ds),memberId:mid});});
     return layoutBlocks(blocks);
   }
@@ -1495,7 +1495,7 @@ function FamilyCrate({ apiData, onLogout }) {
               onMouseDown={block.kind==="item"?e=>onMouseDown(e,block,m.id):undefined}
               onClick={()=>{if(block.kind==="event") setViewModal({event:events.find(e=>e.id===block.evId)});else setViewModal({item:items.find(i=>i.id===block.itemId),memberId:m.id,ds});}}>
               <div className="tblock-title" style={{color:block.isReward?"#fff":block.color,fontWeight:block.isReward?700:500,paddingRight:block.kind==="item"?26:0}}>{block.title}</div>
-              {block.height>28&&<div className="tblock-time" style={{color:block.isReward?"rgba(255,255,255,0.85)":block.color}}>{block.time}</div>}
+              {block.isGoogle&&<div style={{position:"absolute",top:3,right:3,background:"#4A90D9",color:"#fff",borderRadius:3,padding:"1px 4px",fontSize:8,fontWeight:700,lineHeight:1.2}}>G</div>}{block.height>28&&<div className="tblock-time" style={{color:block.isReward?"rgba(255,255,255,0.85)":block.color}}>{block.time}</div>}
               {block.height>44&&block.note&&<div className="tblock-note" style={{color:block.color}}>{block.note}</div>}
               {block.kind==="item"&&<button className={`tblock-chk ${block.done?"on":""}`} style={{background:block.done?`${block.color}80`:"none",borderColor:block.done?block.color:`${block.color}80`,width:17,height:17,borderRadius:4,fontSize:10,top:3,right:3}} onClick={e=>{e.stopPropagation();toggleDone(block.itemId,m.id,ds);}}>{block.done?"✓":""}</button>}
             </div>
