@@ -1560,7 +1560,7 @@ function FamilyCrate({ apiData, onLogout }) {
                 </>
               )}
             </div>
-            <button className="hdr-gear" onClick={()=>setView("settings")}>{Icons.gear}</button>
+            <button className="hdr-gear" onClick={()=>{if(!parentPin){setPinModal("setup");return;}if(!pinUnlocked){setPinModal("enter");return;}setView("settings");}}>{Icons.gear}</button>
           </div>
         </header>
 
