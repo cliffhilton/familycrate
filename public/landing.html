@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
 <title>FamilyCrate — Family Life, Organized</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
@@ -216,9 +218,10 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0b2tsdmZ3anZ0enpsdWlxamN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDcyMDYsImV4cCI6MjA5MjE4MzIwNn0.UzSM9Rf7HV5pObg0dUr0RRjvWTFnpBhuDlhRtUVvtfc'
       );
       const { data: { session } } = await sb.auth.getSession();
+      const token = localStorage.getItem('fc_token');
       const btn = document.getElementById('nav-login-btn');
       if (btn) btn.style.visibility = 'visible';
-      if (session && btn) {
+      if ((session || token) && btn) {
         btn.textContent = 'Open App →';
         btn.href = '/app/';
         btn.setAttribute('style','text-decoration:none;color:#3A6A88;font-size:14px;font-weight:600;background:none;padding:8px 18px;border-radius:100px;border:2px solid #3A6A88;visibility:visible;');
