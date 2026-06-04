@@ -1121,6 +1121,8 @@ function FamilyCrate({ apiData, onLogout }) {
   const [selDate,setSelDate]     = useState(TODAY);
   const [calMo,setCalMo]         = useState(new Date(TODAY+"T12:00:00").setDate(1));
   const [filterMids,setFilterMids] = useState(new Set());
+  const [hiddenFromCal,setHiddenFromCal] = useState(()=>{try{return new Set(JSON.parse(localStorage.getItem("fc_hidden_cal")||"[]"));}catch{return new Set();}});
+  const toggleHideFromCal=id=>{setHiddenFromCal(prev=>{const n=new Set(prev);if(n.has(id))n.delete(id);else n.add(id);localStorage.setItem("fc_hidden_cal",JSON.stringify([...n]));return n;});};
   const [showWeekends,setShowWeekends] = useState(true);
   const [calOpen,setCalOpen]     = useState(false);
   const [hamOpen,setHamOpen]     = useState(false);
@@ -1300,7 +1302,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const netPoints=mid=>earnedInPeriod(mid)-(spentPoints[mid]||0);
   const dFmt=n=>n%1===0?`$${n}`:`$${n.toFixed(2)}`;
 
-  const visibleMembers=useMemo(()=>filterMids.size===0?members:members.filter(m=>filterMids.has(m.id)),[members,filterMids]);
+  const visibleMembers=useMemo(()=>{const noHidden=members.filter(m=>!hiddenFromCal.has(m.id));return filterMids.size===0?noHidden:noHidden.filter(m=>filterMids.has(m.id));},[members,filterMids,hiddenFromCal]);
   const membersWithNewRewards=useMemo(()=>{
     const unseen=redeemReqs.filter(r=>r.status==="approved"&&!seenRewards.includes(r.id));
     return new Set(unseen.map(r=>r.memberId));
@@ -1832,11 +1834,19 @@ function FamilyCrate({ apiData, onLogout }) {
                   <div className="set-sec-title">Family Members</div>
               <div className="set-sec-sub">Tap to edit name, photo, color, or email</div>
               {members.map(m=>(
-                <div key={m.id} className="mer" onClick={()=>setMModal({member:m})}>
-                  <Avatar member={m} size={28}/>
-                  <div className="mer-info"><div className="mer-name">{m.name}</div><div className="mer-sub">{m.email||"No email"}</div></div>
-                  <div style={{fontSize:11,color:m.color,fontWeight:600}}>{netPoints(m.id)} pts</div>
-                  <div className="mer-arrow">›</div>
+                <div key={m.id} className="mer">
+                  <div style={{display:"flex",alignItems:"center",flex:1,gap:8,cursor:"pointer"}} onClick={()=>setMModal({member:m})}>
+                    <Avatar member={m} size={28}/>
+                    <div className="mer-info"><div className="mer-name">{m.name}</div><div className="mer-sub">{m.email||"No email"}</div></div>
+                    <div style={{fontSize:11,color:m.color,fontWeight:600}}>{netPoints(m.id)} pts</div>
+                    <div className="mer-arrow">›</div>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginLeft:6}} onClick={e=>e.stopPropagation()}>
+                    <label style={{display:"flex",alignItems:"center",gap:4,fontSize:11,color:"var(--muted)",cursor:"pointer",whiteSpace:"nowrap"}}>
+                      <input type="checkbox" checked={hiddenFromCal.has(m.id)} onChange={()=>toggleHideFromCal(m.id)} style={{accentColor:"var(--sky)",width:13,height:13}}/>
+                      Hide
+                    </label>
+                  </div>
                 </div>
               ))}
               <button className="add-dashed" onClick={()=>setMModal({member:null})}>+ Add family member</button>
