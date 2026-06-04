@@ -8,6 +8,14 @@ function clearToken() { localStorage.removeItem("fc_token"); localStorage.remove
 
 async function refreshToken() {
   try {
+    // First try Supabase session directly
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.access_token) {
+      setToken(sessionData.session.access_token);
+      if (sessionData.session.refresh_token) localStorage.setItem("fc_refresh_token", sessionData.session.refresh_token);
+      return sessionData.session.access_token;
+    }
+    // Fall back to refresh token
     const rt = localStorage.getItem("fc_refresh_token") || "";
     if (!rt) return null;
     const res = await fetch("/api/auth/refresh", {
