@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<title>Our Story — FamilyCrate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#1A2A38;--ink2:#3A5060;--muted:#7A96A8;
+  --bg:#F0F4F8;--surf:#FAFCFE;--bdr:#D8E4EE;
+  --sky:#3A6A88;--sky-lt:#E0EEF6;--sky-bd:#A0C4DA;
+  --gold:#C49A3C;--gold-lt:#FDF5DC;--gold-bd:#EDD898;
+  --orange:#E07830;--green:#3A9A5A;
+}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;}
+
+/* Nav — identical to landing */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 48px;display:flex;align-items:center;justify-content:space-between;background:rgba(250,252,254,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr);}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{text-decoration:none;color:var(--ink2);font-size:14px;transition:color .2s;}
+.nav-links a:hover{color:var(--sky);}
+.nav-cta{padding:9px 22px;background:var(--sky);color:#fff;border-radius:100px;font-size:14px;font-weight:500;text-decoration:none;transition:all .2s;}
+.nav-cta:hover{background:var(--ink);}
+
+/* Shared */
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+
+/* Hero */
+.hero{min-height:80vh;display:flex;align-items:center;padding:140px 48px 100px;background:linear-gradient(140deg,#1A2A38 0%,#2A4A60 60%,#3A6A88 100%);position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.25;}
+.hero-orb:nth-child(1){width:600px;height:600px;background:#3A6A88;top:-200px;right:-100px;}
+.hero-orb:nth-child(2){width:400px;height:400px;background:#C49A3C;bottom:-150px;left:-80px;}
+.hero-inner{position:relative;z-index:1;max-width:780px;margin:0 auto;text-align:center;animation:fadeUp .8s ease both;}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;background:rgba(196,154,60,.18);border:1px solid rgba(196,154,60,.4);border-radius:100px;font-size:12px;font-weight:500;color:#E8C060;margin-bottom:28px;letter-spacing:.5px;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(40px,6vw,68px);line-height:1.08;font-weight:500;color:#fff;margin-bottom:24px;}
+.hero h1 em{font-style:italic;color:#E8C060;}
+.hero-sub{font-size:18px;color:rgba(255,255,255,.62);line-height:1.7;max-width:560px;margin:0 auto;}
+
+/* Hero image — full bleed photo below hero text */
+.hero-img{width:100%;max-width:1100px;margin:60px auto 0;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.35);position:relative;z-index:1;}
+.hero-img img{width:100%;height:auto;display:block;}
+.hero-img-caption{position:absolute;bottom:0;left:0;right:0;padding:40px 40px 28px;background:linear-gradient(to top,rgba(26,42,56,.7) 0%,transparent 100%);color:rgba(255,255,255,.75);font-size:13px;font-style:italic;}
+
+/* Section shared */
+section{padding:100px 48px;}
+.container{max-width:1100px;margin:0 auto;}
+.section-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:var(--sky-lt);color:var(--sky);border-radius:100px;font-size:12px;font-weight:500;margin-bottom:16px;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,44px);font-weight:500;line-height:1.2;margin-bottom:16px;}
+.section-sub{font-size:16px;color:var(--ink2);line-height:1.7;max-width:600px;}
+
+/* Story sections — alternating */
+.story-s{padding:100px 48px;}
+.story-s.alt{background:var(--surf);}
+.story-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;max-width:1100px;margin:0 auto;}
+.story-inner.flip{direction:rtl;}
+.story-inner.flip > *{direction:ltr;}
+.story-text .eyebrow{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--sky);margin-bottom:14px;}
+.story-text h2{font-family:'Playfair Display',serif;font-size:clamp(26px,3.5vw,40px);font-weight:500;line-height:1.18;margin-bottom:18px;color:var(--ink);}
+.story-text h2 em{font-style:italic;color:var(--sky);}
+.story-text p{font-size:15px;color:var(--ink2);line-height:1.75;margin-bottom:16px;}
+.story-text p:last-child{margin-bottom:0;}
+.story-photo{border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(26,42,56,.14);position:relative;}
+.story-photo img{width:100%;height:100%;object-fit:cover;display:block;min-height:380px;}
+.story-photo-tag{position:absolute;bottom:16px;left:16px;background:rgba(26,42,56,.72);backdrop-filter:blur(8px);color:#fff;padding:7px 14px;border-radius:100px;font-size:11px;font-weight:500;}
+
+/* Dark problem section */
+.problem-s{background:var(--ink);padding:100px 48px;}
+.problem-s .section-badge{background:rgba(255,255,255,.08);color:rgba(255,255,255,.55);}
+.problem-s .section-title{color:#fff;}
+.problem-s .section-sub{color:rgba(255,255,255,.5);}
+.app-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:48px;}
+.app-pill{padding:18px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:14px;display:flex;align-items:flex-start;gap:12px;}
+.app-pill-icon{font-size:22px;flex-shrink:0;}
+.app-pill-text .app-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px;}
+.app-pill-text .app-desc{font-size:12px;color:rgba(255,255,255,.38);line-height:1.5;}
+.problem-quote{max-width:720px;margin:60px auto 0;text-align:center;}
+.problem-quote blockquote{font-family:'Playfair Display',serif;font-size:clamp(20px,2.8vw,30px);font-style:italic;color:rgba(255,255,255,.75);line-height:1.5;}
+.problem-quote cite{display:block;margin-top:18px;font-size:13px;color:rgba(255,255,255,.35);font-style:normal;}
+
+/* Discovery section */
+.discovery-s{background:var(--gold-lt);padding:100px 48px;border-top:1px solid var(--gold-bd);border-bottom:1px solid var(--gold-bd);}
+.discovery-s .section-badge{background:rgba(196,154,60,.15);color:var(--gold);}
+.disc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:52px;}
+.disc-card{padding:28px 24px;background:#fff;border:1.5px solid var(--gold-bd);border-radius:16px;}
+.disc-card-num{font-family:'Playfair Display',serif;font-size:40px;font-weight:500;color:var(--gold-bd);line-height:1;margin-bottom:12px;}
+.disc-card-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.disc-card-body{font-size:13px;color:var(--ink2);line-height:1.65;}
+
+/* What it does — feature callout */
+.what-s{padding:100px 48px;}
+.what-inner{max-width:1100px;margin:0 auto;}
+.what-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:52px;}
+.what-card{padding:28px 24px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;}
+.what-icon{font-size:28px;margin-bottom:14px;}
+.what-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:8px;}
+.what-body{font-size:13px;color:var(--ink2);line-height:1.65;}
+
+/* Real family photo — full width */
+.full-photo{padding:0 48px 100px;}
+.full-photo-wrap{max-width:1100px;margin:0 auto;border-radius:24px;overflow:hidden;box-shadow:0 20px 60px rgba(26,42,56,.12);position:relative;}
+.full-photo-wrap img{width:100%;height:auto;display:block;max-height:520px;object-fit:cover;object-position:center top;}
+.full-photo-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(26,42,56,.55) 0%,transparent 60%);}
+.full-photo-text{position:absolute;left:52px;bottom:48px;max-width:420px;}
+.full-photo-text h3{font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,34px);color:#fff;line-height:1.25;margin-bottom:10px;}
+.full-photo-text p{font-size:14px;color:rgba(255,255,255,.72);line-height:1.65;}
+
+/* CTA */
+.cta-s{background:var(--sky);padding:100px 48px;text-align:center;}
+.cta-s h2{font-family:'Playfair Display',serif;font-size:clamp(28px,4vw,46px);color:#fff;margin-bottom:16px;}
+.cta-s p{color:rgba(255,255,255,.65);font-size:16px;margin-bottom:36px;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.65;}
+.btn-white{padding:15px 34px;background:#fff;color:var(--sky);border-radius:100px;font-size:15px;font-weight:600;text-decoration:none;transition:all .2s;display:inline-block;}
+.btn-white:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.2);}
+.cta-note{margin-top:14px;font-size:12px;color:rgba(255,255,255,.4);}
+
+/* Footer */
+footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.foot-links{display:flex;gap:22px;}
+.foot-links a{color:rgba(255,255,255,.38);text-decoration:none;font-size:13px;transition:color .15s;}
+.foot-links a:hover{color:#fff;}
+.foot-copy{color:rgba(255,255,255,.28);font-size:12px;}
+
+/* Mobile */
+@media(max-width:820px){
+  nav{padding:12px 20px;}.nav-links{display:none;}
+  .hero{padding:120px 20px 80px;}
+  .hero-img{margin:40px 20px 0;border-radius:16px;}
+  .hero-img-caption{padding:24px 20px 16px;}
+  section,.story-s,.problem-s,.discovery-s,.what-s,.cta-s{padding:60px 20px;}
+  .full-photo{padding:0 20px 60px;}
+  .story-inner,.story-inner.flip{grid-template-columns:1fr;direction:ltr;gap:40px;}
+  .full-photo-text{left:24px;bottom:24px;}
+  footer{flex-direction:column;align-items:center;text-align:center;}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try {
+    const sb = supabase.createClient(
+      'https://btoklvfwjvtzzluiqjcz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0b2tsdmZ3anZ0enpsdWlxamN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDcyMDYsImV4cCI6MjA5MjE4MzIwNn0.UzSM9Rf7HV5pObg0dUr0RRjvWTFnpBhuDlhRtUVvtfc'
+    );
+    const { data: { session } } = await sb.auth.getSession();
+    const token = localStorage.getItem('fc_token');
+    const btn = document.getElementById('nav-login-btn');
+    if (btn) btn.style.visibility = 'visible';
+    if ((session || token) && btn) {
+      btn.textContent = 'Open App →';
+      btn.href = '/app/';
+      btn.setAttribute('style','text-decoration:none;color:#3A6A88;font-size:14px;font-weight:600;background:none;padding:8px 18px;border-radius:100px;border:2px solid #3A6A88;visibility:visible;');
+    }
+  } catch(e) {
+    const btn = document.getElementById('nav-login-btn');
+    if(btn) btn.style.visibility = 'visible';
+  }
+
+  // Scroll animations
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');}});
+  },{threshold:0.12});
+  document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+});
+</script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" style="text-decoration:none;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style="height:40px;width:auto;flex-shrink:0;">
+      <defs><style>.l0{fill:#8f6a4a}.l1{fill:#333;mix-blend-mode:multiply;opacity:.2}.l2{isolation:isolate}.l3{fill:#8b6b51}</style></defs>
+      <g class="l2"><g><g>
+        <path class="l3" d="M84.4,32.2h-2.8v12.7h-4.1v-12.7h-1.8v-3.3h1.8v-.8c0-2,.6-3.4,1.7-4.3,1.1-.9,2.8-1.4,5.1-1.3v3.4c-1,0-1.7.1-2.1.5-.4.3-.6,1-.6,1.9v.7h2.8v3.3Z"/>
+        <path class="l3" d="M86.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9-.9.5-2,.7-3.2.7s-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM97.6,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5c-.6.4-1.2.9-1.5,1.6-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+        <path class="l3" d="M130.6,30.4c1.2,1.2,1.8,2.9,1.8,5v9.4h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-8.8c0-1.3-.3-2.2-1-2.9-.6-.7-1.5-1-2.6-1s-2,.3-2.6,1c-.6.7-1,1.6-1,2.9v8.8h-4v-16h4v1.9c.5-.7,1.2-1.2,2-1.6.8-.4,1.7-.6,2.7-.6s2.4.3,3.4.8c1,.5,1.7,1.3,2.3,2.3.5-.9,1.3-1.7,2.3-2.2,1-.6,2.1-.8,3.2-.8,2,0,3.5.6,4.8,1.8Z"/>
+        <path class="l3" d="M136.2,26.3c-.5-.5-.7-1-.7-1.7s.2-1.2.7-1.7c.5-.5,1.1-.7,1.8-.7s1.3.2,1.8.7c.5.5.7,1,.7,1.7s-.2,1.2-.7,1.7c-.5.5-1.1.7-1.8.7s-1.3-.2-1.8-.7ZM140,28.9v16h-4v-16h4Z"/>
+        <path class="l3" d="M147.7,23.5v21.4h-4v-21.4h4Z"/>
+        <path class="l3" d="M166.8,28.9l-9.9,23.6h-4.3l3.5-8-6.4-15.6h4.5l4.1,11.2,4.2-11.2h4.3Z"/>
+        <path class="l3" d="M168,32.5c.7-1.2,1.6-2.2,2.8-2.9s2.6-1,4.1-1,3.6.5,4.9,1.5c1.3,1,2.2,2.4,2.6,4.2h-4.4c-.2-.7-.6-1.2-1.2-1.6-.5-.4-1.2-.6-2-.6-1.2,0-2.1.4-2.7,1.3-.7.8-1,2-1,3.6s.3,2.7,1,3.5c.7.8,1.6,1.3,2.7,1.3,1.6,0,2.7-.7,3.2-2.2h4.4c-.4,1.7-1.3,3.1-2.6,4.1-1.3,1-2.9,1.5-4.9,1.5s-2.9-.3-4.1-1-2.1-1.6-2.8-2.9c-.7-1.2-1-2.7-1-4.3s.3-3.1,1-4.3Z"/>
+        <path class="l3" d="M191.2,29.4c.8-.5,1.8-.7,2.9-.7v4.2h-1.1c-1.3,0-2.2.3-2.9.9-.6.6-1,1.6-1,3.1v8h-4v-16h4v2.5c.5-.8,1.2-1.5,2-2Z"/>
+        <path class="l3" d="M196.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9s-2,.7-3.2.7-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM207.5,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5-1.2.9-1.5,1.6c-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+        <path class="l3" d="M220.6,32.2v7.7c0,.5.1.9.4,1.2.3.2.7.4,1.3.4h1.9v3.4h-2.5c-3.4,0-5.1-1.7-5.1-5v-7.7h-1.9v-3.3h1.9v-4h4.1v4h3.6v3.3h-3.6Z"/>
+        <path class="l3" d="M241.6,38.1h-11.7c0,1.2.5,2.1,1.2,2.7.7.7,1.6,1,2.6,1,1.5,0,2.6-.6,3.2-1.9h4.4c-.5,1.5-1.3,2.8-2.7,3.8-1.3,1-2.9,1.5-4.8,1.5s-2.9-.3-4.1-1c-1.2-.7-2.2-1.7-2.9-2.9-.7-1.3-1-2.7-1-4.3s.3-3.1,1-4.4c.7-1.3,1.6-2.2,2.8-2.9,1.2-.7,2.6-1,4.2-1s2.9.3,4.1,1c1.2.7,2.1,1.6,2.8,2.8.7,1.2,1,2.6,1,4.1s0,1.1-.1,1.6ZM237.5,35.4c0-1-.4-1.9-1.1-2.5-.7-.6-1.6-.9-2.7-.9s-1.8.3-2.5.9-1.1,1.5-1.3,2.5h7.6Z"/>
+      </g><g>
+        <path class="l0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+        <path class="l1" d="M24.8,19.1c.7.7,1.4,1.4,2.1,2.2h4.1c-.8-.7-1.5-1.4-2.3-2.1h-4Z"/>
+        <path class="l1" d="M42.9,19.1v2.1h3.3v-2.1h-3.3Z"/>
+        <path class="l1" d="M29.8,54v-2.2h-3.5v2.2h3.5Z"/>
+        <path class="l1" d="M45.6,54c-.7-.7-1.4-1.4-2.1-2.2h-4.8c.7.7,1.4,1.5,2.1,2.2h4.9Z"/>
+      </g></g></g>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/#features">Features</a>
+    <a href="/#pricing">Pricing</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/login" id="nav-login-btn" style="text-decoration:none;color:#3A6A88;font-size:14px;font-weight:500;padding:8px 16px;border-radius:100px;border:2px solid #3A6A88;display:inline-block;visibility:hidden;">Login →</a>
+    <a href="/register" class="nav-cta">Start Free Trial</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-orb"></div>
+  <div class="hero-orb"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">🏡 Our Story</div>
+    <h1>Built from the <em>inside out.</em></h1>
+    <p class="hero-sub">FamilyCrate wasn't sketched on a whiteboard or pitched to investors first. It was born in a real kitchen, for a real family, built around what actually works — and what actually lasts.</p>
+  </div>
+  <div class="hero-img fade-up">
+    <img src="/images/dad-pointing-at-cal.jpg" alt="Family gathered in kitchen around wall-mounted iPad showing FamilyCrate calendar" loading="lazy"/>
+    <div class="hero-img-caption">The moment it clicked — everyone on the same page, without being told.</div>
+  </div>
+</section>
+
+<!-- THE MOMENT -->
+<section class="story-s fade-up">
+  <div class="story-inner">
+    <div class="story-text">
+      <div class="eyebrow">The Origin</div>
+      <h2>It started with a <em>ridiculous</em> Tuesday morning.</h2>
+      <p>We homeschool. We have three kids at three completely different stages of life. Between school schedules, activities, chores, and just keeping the house from descending into total chaos — the weight of managing it all lands somewhere, usually on Mom and Dad.</p>
+      <p>I'm pretty on top of things, tech-wise. So when I heard about an app called The Chores App, I was genuinely excited. I found it, went to download it — and our iPad was too old to run it. An iPad. Too old. For a chore app.</p>
+      <p>That was the moment. Not anger — just clarity. This shouldn't be this hard. And whatever I built would need to run on any device, no installs, no hardware requirements, no nonsense.</p>
+    </div>
+    <div class="story-photo">
+      <img src="/images/dev-dad.jpg" alt="Dad at kitchen table building the app on his laptop" loading="lazy"/>
+      <div class="story-photo-tag">⚡ Building it himself</div>
+    </div>
+  </div>
+</section>
+
+<!-- THE SEARCH -->
+<section class="problem-s fade-up">
+  <div class="container">
+    <div class="section-badge">The Search</div>
+    <h2 class="section-title" style="color:#fff;">Every app had <em style="color:#E8C060;font-style:italic;">something</em> missing.</h2>
+    <p class="section-sub">Before building anything, I did what any reasonable dad does — I tried everything else first.</p>
+    <div class="app-list">
+      <div class="app-pill">
+        <div class="app-pill-icon">📋</div>
+        <div class="app-pill-text">
+          <div class="app-name">FamilyWall</div>
+          <div class="app-desc">Lists, yes. Points? No. Where's the fun in that for kids?</div>
+        </div>
+      </div>
+      <div class="app-pill">
+        <div class="app-pill-icon">💡</div>
+        <div class="app-pill-text">
+          <div class="app-name">Skylight</div>
+          <div class="app-desc">Great design — and a beautiful price tag to match. But after hearing firsthand from a few moms about its hiccups, I kept looking.</div>
+        </div>
+      </div>
+      <div class="app-pill">
+        <div class="app-pill-icon">📱</div>
+        <div class="app-pill-text">
+          <div class="app-name">The Chores App</div>
+          <div class="app-desc">Required a newer iPad. Then required connecting to Sheets for the right view. That was enough.</div>
+        </div>
+      </div>
+      <div class="app-pill">
+        <div class="app-pill-icon">🔗</div>
+        <div class="app-pill-text">
+          <div class="app-name">Everything else</div>
+          <div class="app-desc">Made for iPhones. Which kids don't have. Which defeats the whole point.</div>
+        </div>
+      </div>
+    </div>
+    <div class="problem-quote">
+      <blockquote>"I showed FamilyCrate to a mom friend early in development. She went jaw-dropped. That's when I knew we had something."</blockquote>
+      <cite>— Cliff, founder & dad of three</cite>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE DISCOVERED WE NEEDED -->
+<section class="discovery-s fade-up">
+  <div class="container">
+    <div class="section-badge">The Discovery</div>
+    <h2 class="section-title">We didn't need more features.<br/>We needed the <em style="font-style:italic;color:var(--gold);">right</em> ones.</h2>
+    <p class="section-sub">Once I started building, the requirements became clear fast. Not from market research — from actually living it.</p>
+    <div class="disc-grid">
+      <div class="disc-card">
+        <div class="disc-card-num">01</div>
+        <div class="disc-card-title">Works on any device, instantly</div>
+        <div class="disc-card-body">A web app. No download. No age requirement. Opens on the family iPad, a phone, a laptop — same experience everywhere.</div>
+      </div>
+      <div class="disc-card">
+        <div class="disc-card-num">02</div>
+        <div class="disc-card-title">Kids actually want to use it</div>
+        <div class="disc-card-body">Points, leaderboards, and a real rewards store. Not gold stars. Something they work toward — and something parents actually deliver.</div>
+      </div>
+      <div class="disc-card">
+        <div class="disc-card-num">03</div>
+        <div class="disc-card-title">One login. The whole family.</div>
+        <div class="disc-card-body">No separate kid accounts. No asking Mom or Dad to unlock something. Kids tap their name, check their stuff, done.</div>
+      </div>
+      <div class="disc-card">
+        <div class="disc-card-num">04</div>
+        <div class="disc-card-title">Parents stay in control — without effort</div>
+        <div class="disc-card-body">A PIN-protected parent layer. Approve rewards, manage chores, connect Google Calendar. Depth without complexity.</div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:760px;margin:48px auto 0;padding:32px 36px;background:#fff;border:1.5px solid var(--gold-bd);border-radius:18px;">
+    <p style="font-size:15px;color:var(--ink2);line-height:1.8;margin-bottom:14px;">But here's what we didn't expect — and what the research backs up: the rewards that work best aren't things. They're experiences. Adventures. Time together. A late-night movie, a spontaneous trip, a day that's just theirs. When kids work toward something meaningful, something they actually remember, the system stops being about chores and starts being about <em>character</em>. Follow-through. Accountability. Doing what you said you'd do.</p>
+    <p style="font-size:15px;color:var(--ink2);line-height:1.8;">FamilyCrate isn't an allowance app. It's a framework for raising kids who do hard things — not because they were told to, but because they learned that effort leads somewhere worth going. Parents who show up and deliver on those rewards aren't just keeping a promise. They're building trust, one redeemed point at a time.</p>
+  </div>
+</section>
+
+<!-- KIDS PHOTO FULL BLEED -->
+<div class="full-photo fade-up">
+  <div class="full-photo-wrap">
+    <img src="/images/kids-checking-off-chores.jpeg" alt="Two boys checking off chores on a tablet in the kitchen" loading="lazy"/>
+    <div class="full-photo-overlay"></div>
+    <div class="full-photo-text">
+      <h3>They check it themselves.<br/>Without being asked.</h3>
+      <p>That's the thing we didn't expect — once kids have something to work toward, the reminders stop. The chores just… get done.</p>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT IT DOES -->
+<section class="what-s fade-up">
+  <div class="what-inner">
+    <div style="text-align:center;margin-bottom:8px;">
+      <div class="section-badge" style="margin:0 auto 16px;">What's Inside</div>
+      <h2 class="section-title" style="max-width:600px;margin:0 auto 16px;">Everything a family actually needs.<br/><em style="font-style:italic;color:var(--sky);">Nothing they don't.</em></h2>
+      <p class="section-sub" style="margin:0 auto;">It's been running in our house every single day. These aren't features we guessed at — they're the ones that changed how our family operates.</p>
+    </div>
+    <div class="what-grid">
+      <div class="what-card">
+        <div class="what-icon">📅</div>
+        <div class="what-title">Family Calendar</div>
+        <div class="what-body">Day and week views. Each person has their own color-coded column. Google Calendar syncs in. Everyone sees exactly what's happening and when.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">✅</div>
+        <div class="what-title">Chores & To-Dos</div>
+        <div class="what-body">Assign recurring chores with time slots, point values, and due dates. Kids check them off themselves. No spreadsheets, no charts, no nagging.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">🏆</div>
+        <div class="what-title">Points & Leaderboard</div>
+        <div class="what-body">Every completed chore earns points. The family leaderboard creates natural sibling motivation — without a parent saying a word.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">🎁</div>
+        <div class="what-title">Rewards Store</div>
+        <div class="what-body">Kids redeem points for real rewards you define — screen time, outings, special treats. Parents approve. Everyone wins.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">🛒</div>
+        <div class="what-title">Grocery & Lists</div>
+        <div class="what-body">A shared grocery list that lives next to everything else. Add items, assign them, check them off. One less thing to text about.</div>
+      </div>
+      <div class="what-card">
+        <div class="what-icon">🔒</div>
+        <div class="what-title">Parent Controls</div>
+        <div class="what-body">A PIN-protected layer for parents. Manage members, set reward periods, approve redemptions, and connect your calendar — all hidden from kids.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOM PHOTO + QUOTE -->
+<section class="story-s alt fade-up">
+  <div class="story-inner flip">
+    <div class="story-text">
+      <div class="eyebrow">The Shift</div>
+      <h2>From nagging to <em>nudging.</em></h2>
+      <p>Here's what surprised us most. Once FamilyCrate was running in our house, the conversations around chores changed completely. Instead of a reminder that felt like a correction, it became something lighter:</p>
+      <p style="font-family:'Playfair Display',serif;font-size:18px;font-style:italic;color:var(--ink);padding:16px 20px;border-left:3px solid var(--sky);margin:8px 0;">"Hey, I just added a few things to the board — looks like there are some good points up for grabs today."</p>
+      <p>That's it. That's the whole thing. The system does the heavy lifting. Parents get to be the fun ones again.</p>
+    </div>
+    <div class="story-photo">
+      <img src="/images/mom-on-phone-checking-rewards.jpg" alt="Mom relaxing while checking rewards on her phone, child cleaning in background" loading="lazy"/>
+      <div class="story-photo-tag">✨ The system works while you rest</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO WE ARE -->
+<section class="story-s fade-up">
+  <div class="story-inner" style="max-width:1100px;margin:0 auto;grid-template-columns:1fr 1fr;gap:80px;align-items:center;">
+    <div style="border-radius:20px;overflow:hidden;background:var(--ink);padding:48px 40px;box-shadow:0 20px 60px rgba(26,42,56,.14);">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:20px;">Who we are</div>
+      <p style="font-family:'Playfair Display',serif;font-size:clamp(20px,2.5vw,28px);color:#fff;line-height:1.5;margin-bottom:24px;font-style:italic;">"Work, home, and creativity — they're not buckets. They're one story."</p>
+      <p style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.75;margin-bottom:16px;">FamilyCrate was built by a creative entrepreneur and homeschool dad who has never believed in the idea of work-life balance as a tightrope act. The same energy that goes into building a brand, or hitting a mountain bike trail, or planning a family adventure — it's all the same story.</p>
+      <p style="font-size:14px;color:rgba(255,255,255,.55);line-height:1.75;">This app isn't a side project. It's what we use every day, with our own kids, in our own home. That's the only product philosophy we've got — and it's the one we'll keep.</p>
+      <div style="margin-top:28px;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);font-size:13px;color:rgba(255,255,255,.35);">Louisville, KY · Homeschool family · Three kids</div>
+    </div>
+    <div class="story-text">
+      <div class="eyebrow">Still day one</div>
+      <h2>We're not a corporation.<br/>We're <em>a family.</em></h2>
+      <p>FamilyCrate is small by design. There's no venture capital, no growth team, no product roadmap driven by investor decks. There's a dad who built something for his family, and now wants to share it with yours.</p>
+      <p>That means every feature request gets real consideration. Every bug matters. And when something isn't working, you'll hear back from someone who actually uses the app — not a support ticket system.</p>
+      <p>We're building this for the long haul, one family at a time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-s fade-up">
+  <div class="container">
+    <h2>Your family's story starts here.</h2>
+    <p>Five minutes to set up. A whole lot less chaos from there. No credit card required to start your free trial.</p>
+    <a href="/register" class="btn-white">Start your free 14-day trial →</a>
+    <div class="cta-note">No credit card required · Cancel anytime · $19/month after trial</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248.3 71.6" style="height:40px;width:auto;min-width:180px;opacity:.7;">
+    <defs><style>.fw0{fill:#fff}.fw1{fill:#fff;mix-blend-mode:multiply;opacity:.2}.fw2{isolation:isolate}</style></defs>
+    <g class="fw2"><g><g>
+      <path class="fw0" d="M84.4,32.2h-2.8v12.7h-4.1v-12.7h-1.8v-3.3h1.8v-.8c0-2,.6-3.4,1.7-4.3,1.1-.9,2.8-1.4,5.1-1.3v3.4c-1,0-1.7.1-2.1.5-.4.3-.6,1-.6,1.9v.7h2.8v3.3Z"/>
+      <path class="fw0" d="M86.5,32.5c.6-1.3,1.5-2.2,2.6-2.9,1.1-.7,2.3-1,3.7-1s2.2.2,3.1.7c.9.5,1.6,1.1,2.2,1.8v-2.3h4.1v16h-4.1v-2.3c-.5.8-1.2,1.4-2.2,1.9-.9.5-2,.7-3.2.7s-2.6-.3-3.7-1c-1.1-.7-2-1.7-2.6-2.9-.6-1.3-1-2.7-1-4.3s.3-3.1,1-4.3ZM97.6,34.3c-.4-.7-.9-1.2-1.6-1.6-.7-.4-1.4-.6-2.1-.6s-1.4.2-2.1.5c-.6.4-1.2.9-1.5,1.6-.4.7-.6,1.5-.6,2.5s.2,1.8.6,2.5c.4.7.9,1.3,1.6,1.7.6.4,1.3.6,2.1.6s1.5-.2,2.1-.6c.7-.4,1.2-.9,1.6-1.6.4-.7.6-1.5.6-2.5s-.2-1.8-.6-2.5Z"/>
+      <path class="fw0" d="M65.6,66.4c-19.9,0-39.6,0-59.6,0,0-19.8,0-39.6,0-59.6,19.8,0,39.5,0,59.6,0,0,19.8,0,39.5,0,59.6ZM18.3,25.3c9.7,10.1,18.8,19.6,27.4,28.7,3,0,5.3,0,7.7,0,0-2,0-3.8,0-5.5-9.6-9.9-19.2-19.8-28.6-29.4-2.3,0-4.4,0-6.5,0,0,2.5,0,4.9,0,6.2ZM56.5,18.7c0,11.8,0,24.1,0,35.3,2.5,2.7,4.5,4.9,6.6,7.1,0-16.3,0-32.7,0-49.1-2.1,2.2-4.2,4.3-6.6,6.7ZM60.7,9.4c-16.6,0-33,0-49.3,0,2.1,2.1,4.2,4.3,6.4,6.6,11.9,0,24.2,0,37,0,1.6-1.7,3.4-3.7,5.3-5.7.2-.2.3-.5.6-.9ZM11.1,63.7c16.6,0,33,0,49.4,0-2.2-2.3-4.2-4.5-6.2-6.5-12.4,0-24.7,0-36.4,0-2.4,2.3-4.5,4.3-6.8,6.5ZM8.7,11.8c0,16.6,0,33,0,49.1,2.1-2,4.2-4,6.5-6.2,0-12,0-24.3,0-36-2.3-2.4-4.4-4.5-6.5-6.8ZM46.1,19.1c0,5.8,0,11.5,0,17.3,2.3,2.2,4.8,4.6,7.2,6.9,0-7.8,0-15.9,0-24.2-2.4,0-4.6,0-7.2,0ZM18.4,54c2.8,0,5.2,0,7.8,0,0-5.2,0-10.2,0-13.9-3-3.3-5.4-5.9-7.8-8.5,0,7.5,0,14.9,0,22.5ZM42.9,19.1c-4.7,0-9.1,0-14.1,0,5,4.7,9.6,9,14.1,13.3,0-4.1,0-8.5,0-13.3ZM29.8,42.4c0,4.1,0,7.8,0,11.6,4,0,7.7,0,10.9,0-3.5-3.7-7.1-7.5-10.9-11.6Z"/>
+    </g></g></g>
+  </svg>
+  <div class="foot-links">
+    <a href="https://www.instagram.com/familycrate/" target="_blank" rel="noopener noreferrer">Instagram</a>
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="mailto:hello@familycrate.co">Contact</a>
+  </div>
+  <div class="foot-copy">© 2026 FamilyCrate · familycrate.co</div>
+</footer>
+
+</body>
+</html>
