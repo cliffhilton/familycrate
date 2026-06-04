@@ -1030,7 +1030,7 @@ export default function AppShell() {
       .catch(() => setAuthState("app"));
   };
 
-  const handleLogout = () => { apiLogout(); setAppData(null); setAuthState("login"); localStorage.removeItem("fc_members"); localStorage.removeItem("fc_items"); localStorage.removeItem("fc_events"); localStorage.removeItem("fc_rewards"); localStorage.removeItem("fc_donelog"); localStorage.removeItem("fc_reqs"); localStorage.removeItem("fc_spent"); };
+  const handleLogout = () => { apiLogout(); setAppData(null); localStorage.removeItem("fc_token"); localStorage.removeItem("fc_refresh_token"); localStorage.removeItem("fc_members"); localStorage.removeItem("fc_items"); localStorage.removeItem("fc_events"); localStorage.removeItem("fc_rewards"); localStorage.removeItem("fc_donelog"); localStorage.removeItem("fc_reqs"); localStorage.removeItem("fc_spent"); window.location.href = "/login"; };
 
   if (authState === "checking") return <LoadingScreen/>;
   if (authState === "login")    return <LoginGate onLogin={handleLogin}/>;
