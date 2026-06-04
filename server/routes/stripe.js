@@ -118,13 +118,15 @@ router.post("/validate-coupon", requireAuth, async (req, res) => {
   try {
     const code = req.body.couponCode?.trim().toUpperCase();
     if (!code) return res.json({ valid: false });
-    const { data: coupon } = await supabase
-      .from("coupons").select("*").eq("code", code).eq("active", true).single();
+    const { data: coupon, error } = await supabase
+      .from("coupons").select("*").eq("code", code).eq("active", true).maybeSingle();
+    if (error) { console.error("Coupon lookup error:", error); return res.json({ valid: false }); }
     if (coupon && (coupon.max_uses === null || coupon.uses < coupon.max_uses)) {
       return res.json({ valid: true, discount: coupon.discount_percent });
     }
     res.json({ valid: false });
   } catch (err) {
+    console.error("Validate coupon error:", err);
     res.json({ valid: false });
   }
 });
