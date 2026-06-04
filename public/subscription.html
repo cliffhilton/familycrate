@@ -385,6 +385,7 @@ function selectPlan(type) {
 }
 
 async function validateCoupon() {
+  const token = localStorage.getItem('fc_token') || '';
   const code = document.getElementById('coupon-input')?.value?.trim().toUpperCase();
   const msg = document.getElementById('coupon-msg');
   if (!code) { msg.textContent = ''; return; }
