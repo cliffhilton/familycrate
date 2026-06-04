@@ -130,15 +130,28 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
 
 /* Mobile */
 @media(max-width:820px){
-  nav{padding:12px 20px;}.nav-links{display:none;}
-  .hero{padding:120px 20px 80px;}
-  .hero-img{margin:40px 20px 0;border-radius:16px;}
-  .hero-img-caption{padding:24px 20px 16px;}
-  section,.story-s,.problem-s,.discovery-s,.what-s,.cta-s{padding:60px 20px;}
-  .full-photo{padding:0 20px 60px;}
-  .story-inner,.story-inner.flip{grid-template-columns:1fr;direction:ltr;gap:40px;}
-  .full-photo-text{left:24px;bottom:24px;}
+  nav{padding:12px 16px;}
+  .nav-links{display:none;}
+  .nav-cta{font-size:12px;padding:7px 14px;}
+  #nav-login-btn{font-size:12px;padding:7px 12px;}
+  .hero{padding:100px 20px 60px;}
+  .hero h1{font-size:38px;}
+  .hero-sub{font-size:15px;}
+  .hero-inner{padding:0 4px;}
+  .hero-img{margin:32px 0 0;border-radius:12px;width:100%;}
+  .hero-img-caption{padding:20px 16px 14px;font-size:12px;}
+  section,.story-s,.problem-s,.discovery-s,.what-s,.cta-s{padding:52px 20px;}
+  .full-photo{padding:52px 20px 52px;}
+  .full-photo-wrap img{max-height:320px;}
+  .full-photo-text{left:16px;bottom:16px;max-width:260px;}
+  .full-photo-text h3{font-size:18px;}
+  .full-photo-text p{font-size:12px;}
+  .story-inner,.story-inner.flip{grid-template-columns:1fr;direction:ltr;gap:32px;}
+  .story-photo img{min-height:260px;}
+  .disc-grid,.app-list,.what-grid{grid-template-columns:1fr;}
+  .problem-quote blockquote{font-size:18px;}
   footer{flex-direction:column;align-items:center;text-align:center;}
+  .foot-links{flex-wrap:wrap;justify-content:center;gap:14px;}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
