@@ -20,6 +20,29 @@ router.post("/checkout", requireAuth, async (req, res) => {
     const { data: family } = await supabase
       .from("families").select("stripe_customer_id, family_name").eq("id", req.familyId).single();
 
+    // Validate coupon if provided
+    let discounts = [];
+    const couponCode = req.body.couponCode?.trim().toUpperCase();
+    if (couponCode) {
+      const { data: coupon } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", couponCode)
+        .eq("active", true)
+        .single();
+      if (coupon && (coupon.max_uses === null || coupon.uses < coupon.max_uses)) {
+        // Create a Stripe coupon on the fly
+        const stripeCoupon = await stripe.coupons.create({
+          percent_off: coupon.discount_percent,
+          duration: "once",
+          name: couponCode,
+        });
+        discounts = [{ coupon: stripeCoupon.id }];
+        // Increment usage
+        await supabase.from("coupons").update({ uses: coupon.uses + 1 }).eq("id", coupon.id);
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: family.stripe_customer_id,
       mode: "subscription",
@@ -34,6 +57,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
         trial_period_days: 14,
         metadata: { familyId: req.familyId },
       },
+      ...(discounts.length > 0 && { discounts }),
       success_url: `https://www.familycrate.co/app/?subscribed=true`,
       cancel_url:  `https://www.familycrate.co/subscription.html`,
       metadata: { familyId: req.familyId },
@@ -88,4 +112,20 @@ router.get("/status", requireAuth, async (req, res) => {
   }
 });
 
+
+// ── Validate coupon code ──────────────────────────────────────────────────────
+router.post("/validate-coupon", requireAuth, async (req, res) => {
+  try {
+    const code = req.body.couponCode?.trim().toUpperCase();
+    if (!code) return res.json({ valid: false });
+    const { data: coupon } = await supabase
+      .from("coupons").select("*").eq("code", code).eq("active", true).single();
+    if (coupon && (coupon.max_uses === null || coupon.uses < coupon.max_uses)) {
+      return res.json({ valid: true, discount: coupon.discount_percent });
+    }
+    res.json({ valid: false });
+  } catch (err) {
+    res.json({ valid: false });
+  }
+});
 export default router;

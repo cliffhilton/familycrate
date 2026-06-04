@@ -200,6 +200,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-
       <div class="guarantee-text"><strong>No charge until your trial ends.</strong> Subscribe now to lock in your plan — your card won't be charged until <span id="guarantee-date">April 21</span>.</div>
     </div>
 
+    <div style="margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none;">
+        <input type="checkbox" id="coupon-toggle" onchange="document.getElementById('coupon-box').style.display=this.checked?'block':'none'" style="accentColor:var(--sky);width:14px;height:14px;"/>
+        Have a discount code?
+      </label>
+      <div id="coupon-box" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="coupon-input" type="text" placeholder="Enter code" style="flex:1;padding:10px 14px;border-radius:10px;border:1.5px solid var(--bdr);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);background:var(--surf);outline:none;" oninput="this.value=this.value.toUpperCase()"/>
+          <button onclick="validateCoupon()" style="padding:10px 16px;border-radius:10px;border:1.5px solid var(--sky);background:none;color:var(--sky);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Apply</button>
+        </div>
+        <div id="coupon-msg" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
+      </div>
+    </div>
     <button class="btn-pri" id="subscribeBtn" onclick="startCheckout()">Subscribe & lock in my plan →</button>
     <a href="/app" class="btn-ghost">Continue with free trial</a>
 
@@ -371,15 +384,42 @@ function selectPlan(type) {
   document.getElementById('check-yearly').style.borderColor = type === 'yearly' ? 'var(--sky)' : '';
 }
 
+async function validateCoupon() {
+  const code = document.getElementById('coupon-input')?.value?.trim().toUpperCase();
+  const msg = document.getElementById('coupon-msg');
+  if (!code) { msg.textContent = ''; return; }
+  msg.style.color = 'var(--muted)';
+  msg.textContent = 'Checking…';
+  try {
+    const res = await fetch('/api/stripe/validate-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ couponCode: code })
+    });
+    const data = await res.json();
+    if (data.valid) {
+      msg.style.color = 'var(--green)';
+      msg.textContent = '✓ ' + data.discount + '% off applied!';
+    } else {
+      msg.style.color = 'var(--red)';
+      msg.textContent = 'Invalid or expired coupon code.';
+    }
+  } catch(e) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = 'Could not validate code.';
+  }
+}
+
 async function startCheckout() {
   const btn = document.getElementById('subscribeBtn');
+  const couponCode = document.getElementById('coupon-input')?.value?.trim() || '';
   if (btn) { btn.disabled = true; btn.textContent = 'Redirecting to checkout…'; }
   try {
     const token = localStorage.getItem('fc_token') || '';
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ plan: selectedBilling }),
+      body: JSON.stringify({ plan: selectedBilling, couponCode }),
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
