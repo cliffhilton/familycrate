@@ -16,7 +16,7 @@ const branded = (content) => `
         
         <!-- Header -->
         <tr>
-          <td style="background:#1A2A38;padding:28px 40px;text-align:center;">
+          <td style="background:#fff;padding:28px 40px;text-align:center;border-bottom:1px solid #D8E4EE;">
             <img src="https://btoklvfwjvtzzluiqjcz.supabase.co/storage/v1/object/public/images/FC-EMAIL-LOGO.png" width="180" alt="FamilyCrate" style="display:block;margin:0 auto;"/>
           </td>
         </tr>
