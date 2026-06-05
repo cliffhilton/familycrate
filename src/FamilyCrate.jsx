@@ -1838,6 +1838,10 @@ function FamilyCrate({ apiData, onLogout }) {
           <div className="set-page" onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
             {(refreshing||pullDist>10)&&<div className="ptr-indicator" style={{height:Math.max(pullDist,refreshing?44:0),opacity:pullDist>30||refreshing?1:pullDist/30,position:"relative"}}><div className="ptr-spinner" style={{transform:refreshing?"none":`rotate(${pullDist*4}deg)`}}/></div>}
 
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 0 8px"}}>
+                <div style={{fontSize:11,color:"var(--muted)"}}>⚙️ Settings</div>
+                <a href="/guide" target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:5,fontSize:12,color:"var(--sky)",textDecoration:"none",fontWeight:500}}>📖 Parent Guide</a>
+              </div>
             <div className="set-cols">
               <div className="set-col">
                 <div className="set-sec">
