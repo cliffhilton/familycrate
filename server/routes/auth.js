@@ -61,22 +61,47 @@ router.post("/register", async (req, res) => {
       from: "Cliff at FamilyCrate <cliff@familycrate.co>",
       to: email,
       subject: `Welcome to FamilyCrate, ${familyName}! 🏡`,
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#fff;">
-          <h2 style="color:#1A2A38;margin-top:20px;">Welcome, ${parentName}! 👋</h2>
-          <p style="color:#344F62;">You've set up <strong>${familyName}</strong> on FamilyCrate. Your 14-day free trial starts today — no credit card needed yet.</p>
-          <h3 style="color:#1A2A38;margin-top:20px;">Getting started:</h3>
-          <ol style="color:#344F62;line-height:2;">
-            <li>Set your Parent PIN in Settings</li>
-            <li>Add chores with point values</li>
-            <li>Set up your Rewards Store</li>
-            <li>Watch your kids get competitive 😄</li>
-          </ol>
-          <a href="https://www.familycrate.co/app" style="display:inline-block;background:#3A6A88;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500;margin-top:16px;">Open FamilyCrate →</a>
-          <p style="color:#344F62;margin-top:24px;">Questions? Just reply to this email — I read every one personally.</p>
-          <p style="color:#344F62;">— Cliff<br/><span style="color:#7A96A8;font-size:12px;">Founder, FamilyCrate · familycrate.co</span></p>
-        </div>
-      `,
+      html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background:#F0F4F8;font-family:Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F0F4F8;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(26,42,56,.08);">
+        <tr>
+          <td style="background:#1A2A38;padding:28px 40px;text-align:center;">
+            <img src="https://btoklvfwjvtzzluiqjcz.supabase.co/storage/v1/object/public/images/FC-EMAIL-LOGO.png" width="180" alt="FamilyCrate" style="display:block;margin:0 auto;"/>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:36px 40px;">
+            <h2 style="color:#1A2A38;margin:0 0 12px;font-size:22px;">Welcome, ${parentName}! 👋</h2>
+            <p style="color:#344F62;line-height:1.75;margin:0 0 16px;">You've set up <strong>${familyName}</strong> on FamilyCrate. Your 14-day free trial starts today — no credit card needed yet.</p>
+            <div style="background:#E0EEF6;border-left:4px solid #3A6A88;padding:16px 20px;border-radius:8px;margin:0 0 20px;">
+              <p style="color:#1A2A38;font-weight:600;margin:0 0 10px;">Get started in 4 steps:</p>
+              <ol style="color:#344F62;line-height:2;margin:0;padding-left:18px;font-size:14px;">
+                <li>Set your Parent PIN in Settings</li>
+                <li>Add chores with point values</li>
+                <li>Set up your Rewards Store</li>
+                <li>Watch your kids get competitive 😄</li>
+              </ol>
+            </div>
+            <a href="https://www.familycrate.co/app" style="display:inline-block;background:#3A6A88;color:#fff;padding:13px 28px;border-radius:100px;text-decoration:none;font-weight:500;font-size:15px;">Open FamilyCrate →</a>
+            <p style="color:#344F62;margin-top:24px;font-size:14px;">Questions? Just reply to this email — I read every one personally.</p>
+            <p style="color:#344F62;margin-top:20px;border-top:1px solid #D8E4EE;padding-top:20px;">— Cliff<br/><span style="color:#7A96A8;font-size:12px;">Founder, FamilyCrate</span></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#F0F4F8;padding:24px 40px;border-top:1px solid #D8E4EE;text-align:center;">
+            <p style="margin:0 0 8px;font-size:12px;color:#7A96A8;">FamilyCrate · familycrate.co</p>
+            <p style="margin:0;font-size:11px;color:#A0B8C8;">You're receiving this because you signed up for FamilyCrate.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
     }).catch(err => console.error("Welcome email failed:", err));
 
     res.json({ success: true, userId, customerId: customer.id });

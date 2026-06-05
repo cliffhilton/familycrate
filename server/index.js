@@ -7,6 +7,7 @@ import stripeRoutes from "./routes/stripe.js";
 import googleRoutes from "./routes/google.js";
 import webhookRoutes from "./routes/webhooks.js";
 import notifyRoutes from "./routes/notify.js";
+import { startEmailScheduler } from "./emailScheduler.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -97,4 +98,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || "Server error" });
 });
 
+startEmailScheduler();
 app.listen(PORT, () => console.log(`FamilyCrate server running on port ${PORT}`));
