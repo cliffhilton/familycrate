@@ -1082,6 +1082,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
   const [view,setView_]          = useState("home");
+  const [showGuidePopup,setShowGuidePopup] = useState(false);
   const refreshDataRef = useRef(null);
   const isRealtimeRef = useRef(false);
   const refreshData=(fromRealtime=false)=>apiGetFamily().then(data=>{
@@ -1101,6 +1102,15 @@ function FamilyCrate({ apiData, onLogout }) {
   }).catch(()=>{});
 
   refreshDataRef.current = refreshData;
+
+  // Show guide popup for new families
+  useEffect(()=>{
+    if(localStorage.getItem("fc_guide_dismissed")) return;
+    const timer = setTimeout(()=>{
+      if(items.length===0 && events.length===0) setShowGuidePopup(true);
+    }, 2000);
+    return ()=>clearTimeout(timer);
+  },[items, events]);
 
   const setView=v=>{
     setView_(v);
@@ -1990,7 +2000,24 @@ function FamilyCrate({ apiData, onLogout }) {
         </nav>
       </div>
 
-      {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{const doEdit=()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);};if(!parentPin){setPinModal("setup");}else if(!pinUnlocked){setPinModal("enter");}else{doEdit();}}} onClose={()=>setViewModal(null)}/>}
+      {showGuidePopup&&(
+    <div style={{position:"fixed",inset:0,background:"rgba(26,42,56,.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowGuidePopup(false)}>
+      <div style={{background:"#fff",borderRadius:20,padding:"32px 28px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(26,42,56,.2)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:36,marginBottom:8}}>🏡</div>
+          <div style={{fontSize:20,fontWeight:700,color:"var(--ink)",marginBottom:8,fontFamily:"DM Sans,sans-serif"}}>Welcome to FamilyCrate!</div>
+          <div style={{fontSize:14,color:"var(--ink2)",lineHeight:1.6}}>Before you dive in, the Parent Guide walks you through setting up chores, rewards, and getting your kids engaged — in about 5 minutes.</div>
+        </div>
+        <a href="/guide" target="_blank" rel="noopener noreferrer" style={{display:"block",textAlign:"center",background:"var(--sky)",color:"#fff",padding:"13px 20px",borderRadius:100,textDecoration:"none",fontWeight:600,fontSize:15,marginBottom:12,fontFamily:"DM Sans,sans-serif"}}>View the Parent Guide →</a>
+        <button onClick={()=>setShowGuidePopup(false)} style={{width:"100%",padding:"11px",borderRadius:100,border:"1.5px solid var(--bdr)",background:"none",fontFamily:"DM Sans,sans-serif",fontSize:14,cursor:"pointer",color:"var(--muted)"}}>I'll figure it out</button>
+        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:14,fontSize:12,color:"var(--muted)",cursor:"pointer"}}>
+          <input type="checkbox" onChange={e=>{if(e.target.checked){localStorage.setItem("fc_guide_dismissed","1");setShowGuidePopup(false);}}} style={{accentColor:"var(--sky)"}}/>
+          Don't show this again
+        </label>
+      </div>
+    </div>
+  )}
+  {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{const doEdit=()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);};if(!parentPin){setPinModal("setup");}else if(!pinUnlocked){setPinModal("enter");}else{doEdit();}}} onClose={()=>setViewModal(null)}/>}
       {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
       {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
       {rewardScheduleModal&&<EventModal
