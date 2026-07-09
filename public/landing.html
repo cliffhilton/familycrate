@@ -147,7 +147,7 @@ h1 em{font-style:normal;color:var(--sky);}
 .wk-blk{border-radius:3px;padding:2px 3px;font-size:7px;font-weight:500;margin-bottom:1px;border-left:2px solid transparent;}
 
 /* Economy section */
-.econ-s{background:var(--gold-lt);padding:88px 48px;border-top:1px solid var(--gold-bd);border-bottom:1px solid var(--gold-bd);}
+.econ-s{padding:88px 48px;position:relative;overflow:hidden;}.econ-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0;}.econ-overlay{position:absolute;inset:0;background:rgba(26,42,56,0.72);z-index:1;}.econ-inner{position:relative;z-index:2;}
 .econ-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;max-width:1100px;margin:0 auto;}
 .econ-vis{background:var(--surf);border-radius:18px;border:1.5px solid var(--bdr);padding:22px;box-shadow:0 8px 32px rgba(26,42,56,.08);}
 
@@ -351,6 +351,12 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
   </div>
 </section>
 
+<!-- KIDS PHOTO BREAK -->
+<div style="width:100%;height:420px;overflow:hidden;position:relative;">
+  <img src="https://btoklvfwjvtzzluiqjcz.supabase.co/storage/v1/object/public/images/kids-checking-off-chores.jpeg" alt="Kids checking off chores on tablet" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;"/>
+  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(26,42,56,0) 40%,rgba(26,42,56,0.5) 100%);"></div>
+</div>
+
 <!-- PROBLEM -->
 <section class="problem-s">
   <div class="container">
@@ -467,12 +473,14 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
 
 <!-- POINTS ECONOMY -->
 <section class="econ-s">
+  <img class="econ-bg" src="https://btoklvfwjvtzzluiqjcz.supabase.co/storage/v1/object/public/images/family-movie-night.jpg" alt="Family movie night"/>
+  <div class="econ-overlay"></div>
   <div class="econ-inner">
     <div>
-      <div class="section-badge">⭐ Points System</div>
-      <h2 class="section-title">Kids feel the points.<br/>You control the dollars.</h2>
-      <p class="section-sub" style="margin-bottom:20px;">Set your own points-to-dollars rate — only parents see it. Kids earn big point values that feel exciting. Cash out only when they've really earned it.</p>
-      <p style="font-size:14px;color:var(--ink2);line-height:1.75;">Keep point values high (5–15 per chore) and the dollar rate lower. A full week of chores earns 150 pts — meaningful without breaking the bank. 💪</p>
+      <div class="section-badge" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);">⭐ Points System</div>
+      <h2 class="section-title" style="color:#fff;">Kids feel the points.<br/>You control the dollars.</h2>
+      <p class="section-sub" style="margin-bottom:20px;color:rgba(255,255,255,0.7);">Set your own points-to-dollars rate — only parents see it. Kids earn big point values that feel exciting. Cash out only when they've really earned it.</p>
+      <p style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.75;">Keep point values high (5–15 per chore) and the dollar rate lower. A full week of chores earns 150 pts — meaningful without breaking the bank. 💪</p>
     </div>
     <div class="econ-vis">
       <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;">This week · The Johnson Family</div>
@@ -505,21 +513,8 @@ footer{padding:32px 48px;background:var(--ink);display:flex;align-items:center;j
         <li>Approval notifications by email</li>
       </ul>
     </div>
-    <div>
-      <div class="feat-mock">
-        <div class="feat-mock-hdr"><span>Rewards Store</span><span style="color:var(--gold);font-weight:500;">Lucy — 116 pts</span></div>
-        <div class="feat-mock-body">
-          <div class="rw-grid">
-            <div class="rw-card"><div class="rw-em">📱</div><div class="rw-tt">Screen time</div><div class="rw-pt">10 pts</div></div>
-            <div class="rw-card"><div class="rw-em">🍕</div><div class="rw-tt">Pick dinner</div><div class="rw-pt">8 pts</div></div>
-            <div class="rw-card"><div class="rw-em">🌙</div><div class="rw-tt">Stay up late</div><div class="rw-pt">12 pts</div></div>
-            <div class="rw-card"><div class="rw-em">🎬</div><div class="rw-tt">Movie pick</div><div class="rw-pt">15 pts</div></div>
-            <div class="rw-card sel"><div class="rw-em">✨</div><div class="rw-tt" style="color:var(--sky)">Skip a chore</div><div class="rw-pt">20 pts</div></div>
-            <div class="rw-card"><div class="rw-em">💵</div><div class="rw-tt">Cash out $5</div><div class="rw-pt">20 pts</div></div>
-          </div>
-          <div style="margin-top:12px;padding:9px 11px;background:var(--sky-lt);border-radius:8px;border:1px solid var(--sky-bd);font-size:11px;color:var(--sky);">✓ <strong>Emma</strong> requested "Stay up late" — waiting for parent approval</div>
-        </div>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:center;">
+      <img src="https://btoklvfwjvtzzluiqjcz.supabase.co/storage/v1/object/public/images/points-reward-screen.jpg" alt="FamilyCrate Rewards Store" style="width:100%;max-width:560px;border-radius:18px;border:1.5px solid var(--bdr);box-shadow:0 16px 48px rgba(26,42,56,0.14);display:block;"/>
     </div>
   </div>
 </section>
