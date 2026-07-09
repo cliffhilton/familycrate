@@ -425,11 +425,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);}
 @media(min-width:600px){.reward-grid{grid-template-columns:repeat(4,1fr);}}
 .reward-card{padding:0;background:var(--surf);border-radius:12px;border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;text-align:center;overflow:hidden;display:flex;flex-direction:column;min-height:150px;}
 .reward-card:hover{border-color:var(--sky);transform:translateY(-2px);box-shadow:0 6px 20px rgba(58,106,136,.18);}
-.reward-card-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 10px 10px;}
+.reward-card-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 10px 10px;position:relative;}
+.reward-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0;}
+.reward-card-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.45);}
 .reward-icon{margin-bottom:10px;color:var(--sky);}
 .reward-icon svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
-.reward-title{font-size:17px;font-weight:800;line-height:1.3;}
+.reward-title{font-size:17px;font-weight:800;line-height:1.3;position:relative;z-index:1;}
+.reward-title-img{font-size:17px;font-weight:800;line-height:1.3;color:#fff;position:relative;z-index:1;text-shadow:0 1px 4px rgba(0,0,0,.4);margin-top:auto;margin-bottom:auto;}
 .reward-pts{font-size:13px;font-weight:700;padding:9px 6px;background:var(--sky);color:#fff;width:100%;margin-top:auto;}
+.reward-pts-img{font-size:13px;font-weight:700;padding:9px 6px;background:rgba(58,106,136,0.85);color:#fff;width:100%;position:relative;z-index:1;}
 .req-card{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surf);border-radius:9px;border:1.5px solid var(--bdr);margin-bottom:5px;}
 .req-body{flex:1;min-width:0;}
 .req-name{font-size:12px;font-weight:500;}
@@ -749,18 +753,50 @@ function MemberModal({ member, onSave, onDelete, onClose }) {
 }
 
 function RewardModal({ reward, onSave, onDelete, onClose }) {
-  const [title,setTitle]=useState(reward?.title??""); const [pts,setPts]=useState(String(reward?.points??10)); const [icon,setIcon]=useState(reward?.icon??"gift");
-  const ICONS=["screen","dinner","late","movie","skip","cash","gift"];
-  const LABELS={"screen":"Screen time","dinner":"Pick dinner","late":"Stay up late","movie":"Movie pick","skip":"Skip a chore","cash":"Cash out","gift":"Gift"};
-  const save=()=>{if(!title.trim())return;onSave({title:title.trim(),points:Math.max(1,parseInt(pts)||1),icon});};
+  const [title,setTitle]=useState(reward?.title??"");
+  const [pts,setPts]=useState(String(reward?.points??10));
+  const [imageUrl,setImageUrl]=useState(reward?.imageUrl??"");
+  const [uploading,setUploading]=useState(false);
+  const [uploadErr,setUploadErr]=useState("");
+  const fileRef=useRef(null);
+
+  const uploadImage=async(file)=>{
+    if(!file)return;
+    if(file.size>2*1024*1024){setUploadErr("Image must be under 2MB.");return;}
+    setUploading(true);setUploadErr("");
+    try{
+      const ext=file.name.split(".").pop();
+      const path=`reward-${Date.now()}.${ext}`;
+      const{error}=await supabase.storage.from("rewards").upload(path,file,{upsert:true});
+      if(error)throw error;
+      const{data}=supabase.storage.from("rewards").getPublicUrl(path);
+      setImageUrl(data.publicUrl);
+    }catch(e){setUploadErr("Upload failed. Try again.");}
+    setUploading(false);
+  };
+
+  const save=()=>{if(!title.trim())return;onSave({title:title.trim(),points:Math.max(1,parseInt(pts)||1),icon:"gift",imageUrl:imageUrl||null});};
+
   return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{reward?"Edit reward":"Add reward"}</div>
     <div className="mrow"><div className="mlbl">Title</div><input className="min" value={title} onChange={e=>setTitle(e.target.value)} autoFocus/></div>
     <div className="mrow"><div className="mlbl">Points cost</div><input className="min" type="number" min="1" value={pts} onChange={e=>setPts(e.target.value)} style={{width:90}}/></div>
-    <div className="mrow"><div className="mlbl">Icon</div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{ICONS.map(ic=><button key={ic} onClick={()=>setIcon(ic)} style={{width:44,height:44,border:`1.5px solid ${icon===ic?"var(--sky)":"var(--bdr)"}`,borderRadius:9,background:icon===ic?"var(--sky-lt)":"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:4}}>
-      <div style={{width:18,height:18,color:icon===ic?"var(--sky)":"var(--muted)",stroke:"currentColor"}}>{REWARD_ICONS[ic]||REWARD_ICONS.gift}</div>
-      <div style={{fontSize:8,color:icon===ic?"var(--sky)":"var(--muted)"}}>{LABELS[ic]}</div>
-    </button>)}</div></div>
-    <div className="mact">{reward&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" onClick={save}>Save</button></div>
+    <div className="mrow"><div className="mlbl">Image</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%"}}>
+        {imageUrl&&<div style={{position:"relative",borderRadius:10,overflow:"hidden",height:100}}>
+          <img src={imageUrl} style={{width:"100%",height:"100%",objectFit:"cover"}} alt="reward"/>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)"}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:700,fontSize:15}}>{title||"Preview"}</div>
+          <button onClick={()=>setImageUrl("")} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:22,height:22,color:"#fff",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+        </div>}
+        <button onClick={()=>fileRef.current?.click()} style={{padding:"9px 14px",borderRadius:9,border:"1.5px dashed var(--bdr)",background:"var(--sky-lt)",color:"var(--sky)",fontFamily:"DM Sans,sans-serif",fontSize:13,cursor:"pointer",fontWeight:500}}>
+          {uploading?"Uploading...":imageUrl?"Change image":"Upload image"}
+        </button>
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{display:"none"}} onChange={e=>uploadImage(e.target.files[0])}/>
+        {uploadErr&&<div style={{fontSize:12,color:"var(--red)"}}>{uploadErr}</div>}
+        <div style={{fontSize:11,color:"var(--muted)"}}>JPG, PNG or WebP · max 2MB</div>
+      </div>
+    </div>
+    <div className="mact">{reward&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>Cancel</button><button className="mbtn-pri" onClick={save} disabled={uploading}>Save</button></div>
   </div></ModalWrap>);
 }
 
@@ -1820,7 +1856,12 @@ function FamilyCrate({ apiData, onLogout }) {
                 <div className="reward-grid">
                   {rewards.map(r=>(
                     <div key={r.id} className="reward-card" onClick={()=>setRdModal({reward:r})}>
-                      <div className="reward-card-body"><RewardIcon icon={r.icon}/><div className="reward-title">{r.title}</div></div>
+                      <div className="reward-card-body">
+                        {r.imageUrl&&<img src={r.imageUrl} className="reward-card-img" alt={r.title}/>}
+                        {r.imageUrl&&<div className="reward-card-overlay"/>}
+                        {!r.imageUrl&&<RewardIcon icon={r.icon||"gift"}/>}
+                        <div className={r.imageUrl?"reward-title-img":"reward-title"}>{r.title}</div>
+                      </div>
                       <div className="reward-pts">{r.points} pts · {dFmt(r.points*rate)}</div>
                     </div>
                   ))}

@@ -102,10 +102,11 @@ function transformEvent(e) {
 
 function transformReward(r) {
   return {
-    id:     r.id,
-    title:  r.title,
-    points: r.points,
-    icon:   r.icon || "gift",
+    id:       r.id,
+    title:    r.title,
+    points:   r.points,
+    icon:     r.icon || "gift",
+    imageUrl: r.image_url || null,
   };
 }
 
@@ -221,8 +222,8 @@ export async function apiDeleteEvent(id)         { return req("DELETE", `/api/fa
 export async function apiToggleDone(key, done)   { return req("POST",   "/api/family/done",         { key, done }); }
 
 // Rewards
-export async function apiAddReward(data)         { return req("POST",   "/api/family/rewards",      data); }
-export async function apiUpdateReward(id, data)  { return req("PUT",    `/api/family/rewards/${id}`, data); }
+export async function apiAddReward(data)         { return req("POST",   "/api/family/rewards",      {title:data.title,points:data.points,icon:data.icon,image_url:data.imageUrl||null}); }
+export async function apiUpdateReward(id, data)  { return req("PUT",    `/api/family/rewards/${id}`, {title:data.title,points:data.points,icon:data.icon,image_url:data.imageUrl||null}); }
 export async function apiDeleteReward(id)        { return req("DELETE", `/api/family/rewards/${id}`); }
 
 // Redemptions
