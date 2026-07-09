@@ -210,6 +210,12 @@ const INIT_REWARDS = [
   { id:6, title:"Cash out $5",              points:20, icon:"cash" },
 ];
 
+const INIT_EVENT_CATEGORIES = [
+  {id:"family",  label:"Family",   color:"#3A6A88"},
+  {id:"school",  label:"School",   color:"#3A9A5A"},
+  {id:"activity",label:"Activity", color:"#E07830"},
+];
+
 const INIT_CATEGORIES = [
   { id:"chores", label:"Chores" },
   { id:"groceries", label:"Groceries" },
@@ -673,7 +679,7 @@ function ItemModal({ item, members, prefill, categories, onSave, onDelete, onClo
 }
 
 // ─── Event Modal ──────────────────────────────────────────────────────────────
-function EventModal({ event, members, onSave, onDelete, onClose, skipLabel }) {
+function EventModal({ event, members, eventCategories:evCats, onSave, onDelete, onClose, skipLabel }) {
   const [title,setTitle] = useState(event?.title??"");
   const [date,setDate]   = useState(event?.date??TODAY);
   const [sd,setSd]       = useState(event?.startDate??event?.date??TODAY);
@@ -683,7 +689,7 @@ function EventModal({ event, members, onSave, onDelete, onClose, skipLabel }) {
   const [rep,setRep]     = useState(event?.repeat??"none");
   const [type,setType]   = useState(event?.type??"family");
   const toggleWho=id=>setWho(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
-  const colorMap={school:SCHOOL_COLOR,activity:CKY_COLOR,family:SHARED_COLOR};
+  const colorMap=Object.fromEntries((evCats||INIT_EVENT_CATEGORIES).map(ec=>[ec.id,ec.color]));
   const calcDur=()=>{ const sm=timeToMinutes(st),em=timeToMinutes(et); return (sm<0||em<0||em<=sm)?60:em-sm; };
   const save=()=>{ if(!title.trim()) return; const dur=calcDur(); const singleMember=who.length===1?members.find(m=>m.id===who[0]):null; const color=singleMember?singleMember.color:colorMap[type]??SHARED_COLOR; const base={title:title.trim(),time:st,duration:dur,memberIds:who,repeat:rep,type,color}; onSave(rep==="none"?{...base,date}:{...base,startDate:sd,date:sd}); };
   return (<ModalWrap onClose={onClose}><div className="modal"><div className="mhandle"/><div className="mtitle">{event?"Edit event":"Add event"}</div>
@@ -694,7 +700,7 @@ function EventModal({ event, members, onSave, onDelete, onClose, skipLabel }) {
       <div className="mrow"><div className="mlbl">End time</div><select className="min" value={et} onChange={e=>setEt(e.target.value)}><option value="">—</option>{TIME_OPTIONS.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
       <div className="mrow"><div className="mlbl">Repeat</div><select className="min" value={rep} onChange={e=>setRep(e.target.value)}><option value="none">Once</option><option value="daily">Daily</option><option value="weekly-dow">Weekly</option><option value="monthly">Monthly</option></select></div>
     </div>
-    <div className="mgrid2"><div className="mrow"><div className="mlbl">Type</div><select className="min" value={type} onChange={e=>setType(e.target.value)}><option value="family">Family</option><option value="school">School</option><option value="activity">Activity</option></select></div></div>
+    <div className="mgrid2"><div className="mrow"><div className="mlbl">Type</div><select className="min" value={type} onChange={e=>setType(e.target.value)}>{(evCats||INIT_EVENT_CATEGORIES).map(ec=><option key={ec.id} value={ec.id}>{ec.label}</option>)}</select></div></div>
     <div className="mrow"><div className="mlbl">Who's involved</div><div className="ag"><button className={`ac ${who.length===0?"on":""}`} onClick={()=>setWho([])}>Everyone</button>{members.map(m=><button key={m.id} className={`ac ${who.includes(m.id)?"on":""}`} onClick={()=>toggleWho(m.id)}><Avatar member={m} size={13}/>{m.name}</button>)}</div></div>
     <div className="mact">{event&&onDelete&&<button className="mbtn-del" onClick={onDelete}>Delete</button>}<button className="mbtn-ghost" onClick={onClose}>{skipLabel||"Cancel"}</button><button className="mbtn-pri" onClick={save}>{skipLabel?"Save to Calendar":"Save"}</button></div>
   </div></ModalWrap>);
@@ -1099,6 +1105,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [redeemReqs,setRRR]  = useState(()=>apiData?.redeemReqs   || []);
   const [spentPoints,setSPR] = useState(()=>apiData?.spentPoints  || {});
   const [categories,setCatsR] = useState(()=>apiData?.categories?.length ? apiData.categories : load("fc_cats",INIT_CATEGORIES));
+  const [eventCategories,setEvCatsR] = useState(()=>apiData?.eventCategories?.length ? apiData.eventCategories : load("fc_ev_cats",INIT_EVENT_CATEGORIES));
   const [rate,setRateR]      = useState(()=>apiData?.rate         || load("fc_rate",0.25));
   const [periodStart,setPSR] = useState(()=>apiData?.periodStart  || load("fc_ps",PERIOD_START));
   const [periodDays,setPDR]  = useState(()=>apiData?.periodDays   || load("fc_pd",14));
@@ -1114,6 +1121,7 @@ function FamilyCrate({ apiData, onLogout }) {
   // Preferences — keep in localStorage for quick load
   const setRate        = v=>{const n=typeof v==="function"?v(rate):v;       save("fc_rate",n);     setRateR(n);};
   const setCategories  = v=>{const n=typeof v==="function"?v(categories):v; save("fc_cats",n); setCatsR(n); apiUpdateSettings({categories:n}).catch(console.error);};
+  const setEventCategories = v=>{const n=typeof v==="function"?v(eventCategories):v; save("fc_ev_cats",n); setEvCatsR(n); apiUpdateSettings({event_categories:n}).catch(console.error);};
   const setPeriodStart = v=>{const n=typeof v==="function"?v(periodStart):v;save("fc_ps",n);       setPSR(n);};
   const setPeriodDays  = v=>{const n=typeof v==="function"?v(periodDays):v; save("fc_pd",n);       setPDR(n);};
 
@@ -1134,6 +1142,7 @@ function FamilyCrate({ apiData, onLogout }) {
     });
     if(data.spentPoints) setSPR(prev=>({...prev,...data.spentPoints}));
     if(data.categories?.length) setCatsR(data.categories);
+    if(data.eventCategories?.length) setEvCatsR(data.eventCategories);
     if(data.rate) setRateR(data.rate);
   }).catch(()=>{});
 
@@ -1935,7 +1944,19 @@ function FamilyCrate({ apiData, onLogout }) {
               <div className="set-col">
                 {pendingReqs.length>0&&(
                   <div className="set-sec">
-                    <div className="set-sec-title">Reward Requests</div>
+                    <div className="set-sec">
+                <div className="set-sec-title">Event Categories</div>
+                <div className="set-sec-sub">Customize your calendar event types</div>
+                {eventCategories.map((cat,i)=>(
+                  <div key={cat.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <input type="color" value={cat.color} onChange={e=>setEventCategories(cs=>cs.map((c,j)=>j===i?{...c,color:e.target.value}:c))} style={{width:32,height:32,border:"none",borderRadius:6,cursor:"pointer",padding:2}}/>
+                    <input className="min" value={cat.label} onChange={e=>setEventCategories(cs=>cs.map((c,j)=>j===i?{...c,label:e.target.value}:c))} style={{flex:1}}/>
+                    {eventCategories.length>1&&<button onClick={()=>setEventCategories(cs=>cs.filter((_,j)=>j!==i))} style={{padding:"4px 10px",borderRadius:7,border:"none",background:"#EDD4D4",color:"#6A2A2A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Remove</button>}
+                  </div>
+                ))}
+                <button onClick={()=>setEventCategories(cs=>[...cs,{id:`cat-${Date.now()}`,label:"New type",color:"#3A6A88"}])} style={{width:"100%",padding:"9px",borderRadius:9,border:"1.5px dashed var(--bdr)",background:"none",fontFamily:"DM Sans,sans-serif",fontSize:13,color:"var(--muted)",cursor:"pointer",marginTop:4}}>+ Add category</button>
+              </div>
+              <div className="set-sec-title">Reward Requests</div>
                     <div className="set-sec-sub">Approve your kids' reward requests</div>
                     {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
                       <div key={req.id} className="req-card">
@@ -2064,8 +2085,8 @@ function FamilyCrate({ apiData, onLogout }) {
   )}
   {viewModal&&<ViewModal item={viewModal.item} event={viewModal.event} members={members} memberId={viewModal.memberId} ds={viewModal.ds} isDone={viewModal.item&&viewModal.memberId&&viewModal.ds?isDone(viewModal.item.id,viewModal.memberId,viewModal.ds):false} onToggle={()=>{if(viewModal.item&&viewModal.memberId&&viewModal.ds)toggleDone(viewModal.item.id,viewModal.memberId,viewModal.ds);}} onEdit={()=>{const doEdit=()=>{if(viewModal.item)setIModal({item:viewModal.item});else if(viewModal.event)setEModal({event:viewModal.event});setViewModal(null);};if(!parentPin){setPinModal("setup");}else if(!pinUnlocked){setPinModal("enter");}else{doEdit();}}} onClose={()=>setViewModal(null)}/>}
       {iModal&&<ItemModal item={iModal.item} members={members} prefill={iModal.prefill} categories={categories} onSave={p=>{saveItem(iModal.item?.id,iModal.item?p:{...p,...(iModal.prefill||{})});setIModal(null);}} onDelete={()=>{delItem(iModal.item.id);setIModal(null);}} onClose={()=>setIModal(null)}/>}
-      {eModal&&<EventModal event={eModal.event} members={members} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
-      {rewardScheduleModal&&<EventModal
+      {eModal&&<EventModal event={eModal.event} members={members} eventCategories={eventCategories} onSave={p=>{saveEvent(eModal.event?.id,p);setEModal(null);}} onDelete={()=>{delEvent(eModal.event.id);setEModal(null);}} onClose={()=>setEModal(null)}/>}
+      {rewardScheduleModal&&<EventModal eventCategories={eventCategories}
         event={{title:rewardScheduleModal.title,memberIds:[rewardScheduleModal.memberId],type:"family",color:rewardScheduleModal.memberColor}}
         members={members}
         onSave={p=>{saveEvent(null,{...p,color:rewardScheduleModal.memberColor});doApprove(rewardScheduleModal.reqId);setRewardScheduleModal(null);}}
