@@ -1792,7 +1792,7 @@ function FamilyCrate({ apiData, onLogout }) {
                     <div className="lbc-info">
                       <div className="lbc-name">{m.name}</div>
                       <div className="lbc-bar"><div className="lbc-fill" style={{width:`${(Math.max(m.pts,0)/maxPts)*100}%`,background:m.color}}/></div>
-                      {(()=>{const approvedForMember=redeemReqs.filter(r=>r.memberId===m.id&&r.status==="approved");return approvedForMember.length>0&&(
+                      {(()=>{const approvedForMember=redeemReqs.filter(r=>r.memberId===m.id&&r.status==="approved"&&(!r.created_at||r.created_at.slice(0,10)>=periodStart));return approvedForMember.length>0&&(
                         <div className="lbc-rewards">
                           {approvedForMember.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId);if(!rw)return null;return(
                             <div key={req.id} className="lbc-reward-chip">
