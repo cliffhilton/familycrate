@@ -1944,10 +1944,11 @@ function FamilyCrate({ apiData, onLogout }) {
                 <div className="set-sec-title">Event Categories</div>
                 <div className="set-sec-sub">Customize your calendar event types</div>
                 {eventCategories.map((cat,i)=>(
-                  <div key={cat.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                    <input type="color" value={cat.color} onChange={e=>setEventCategories(cs=>cs.map((c,j)=>j===i?{...c,color:e.target.value}:c))} style={{width:32,height:32,border:"none",borderRadius:6,cursor:"pointer",padding:2}}/>
-                    <input className="min" value={cat.label} onChange={e=>setEventCategories(cs=>cs.map((c,j)=>j===i?{...c,label:e.target.value}:c))} style={{flex:1}}/>
-                    {eventCategories.length>1&&<button onClick={()=>setEventCategories(cs=>cs.filter((_,j)=>j!==i))} style={{padding:"4px 10px",borderRadius:7,border:"none",background:"#EDD4D4",color:"#6A2A2A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Remove</button>}
+                  <div key={cat.id} className="set-row" style={{gap:6}}>
+                    <input className="min" style={{flex:1,fontSize:13,padding:"6px 10px"}} value={cat.label}
+                      onChange={e=>setEventCategories(cs=>cs.map((c,j)=>j===i?{...c,label:e.target.value}:c))}/>
+                    {eventCategories.length>1&&<button onClick={()=>setEventCategories(cs=>cs.filter((_,j)=>j!==i))}
+                      style={{padding:"6px 10px",borderRadius:7,border:"none",background:"#F0D8D0",color:"#8A3A2A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Remove</button>}
                   </div>
                 ))}
                 <button className="add-dashed" onClick={()=>setEventCategories(cs=>[...cs,{id:`cat-${Date.now()}`,label:"New type",color:"#3A6A88"}])}>+ Add category</button>
