@@ -1939,12 +1939,8 @@ function FamilyCrate({ apiData, onLogout }) {
                 </div>
               ))}
               <button className="add-dashed" onClick={()=>{const id="cat_"+Date.now();setCategories(cs=>[...cs,{id,label:"New List"}]);setListTab(id);}}>+ Add category</button>
-                </div>
               </div>
-              <div className="set-col">
-                {pendingReqs.length>0&&(
-                  <div className="set-sec">
-                    <div className="set-sec">
+              <div className="set-sec">
                 <div className="set-sec-title">Event Categories</div>
                 <div className="set-sec-sub">Customize your calendar event types</div>
                 {eventCategories.map((cat,i)=>(
@@ -1954,9 +1950,13 @@ function FamilyCrate({ apiData, onLogout }) {
                     {eventCategories.length>1&&<button onClick={()=>setEventCategories(cs=>cs.filter((_,j)=>j!==i))} style={{padding:"4px 10px",borderRadius:7,border:"none",background:"#EDD4D4",color:"#6A2A2A",fontFamily:"DM Sans,sans-serif",fontSize:12,cursor:"pointer"}}>Remove</button>}
                   </div>
                 ))}
-                <button onClick={()=>setEventCategories(cs=>[...cs,{id:`cat-${Date.now()}`,label:"New type",color:"#3A6A88"}])} style={{width:"100%",padding:"9px",borderRadius:9,border:"1.5px dashed var(--bdr)",background:"none",fontFamily:"DM Sans,sans-serif",fontSize:13,color:"var(--muted)",cursor:"pointer",marginTop:4}}>+ Add category</button>
+                <button className="add-dashed" onClick={()=>setEventCategories(cs=>[...cs,{id:`cat-${Date.now()}`,label:"New type",color:"#3A6A88"}])}>+ Add category</button>
               </div>
-              <div className="set-sec-title">Reward Requests</div>
+              </div>
+              <div className="set-col">
+                {pendingReqs.length>0&&(
+                  <div className="set-sec">
+                    <div className="set-sec-title">Reward Requests</div>
                     <div className="set-sec-sub">Approve your kids' reward requests</div>
                     {pendingReqs.map(req=>{const rw=rewards.find(r=>r.id===req.rewardId),mem=getMember(members,req.memberId);if(!rw||!mem)return null;return(
                       <div key={req.id} className="req-card">
