@@ -1,5 +1,5 @@
 import express from "express";
-import supabase from "../lib/supabase.js";
+import supabase, { authClient } from "../lib/supabase.js";
 import stripe from "../lib/stripe.js";
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -116,7 +116,7 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
     if (error) return res.status(401).json({ error: error.message });
 
     // Get family data
@@ -161,7 +161,7 @@ router.get("/me", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   try {
     const { email } = req.body;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await authClient.auth.resetPasswordForEmail(email, {
       redirectTo: "https://familycrate.co/reset",
     });
     if (error) return res.status(400).json({ error: error.message });
@@ -176,7 +176,7 @@ router.post("/refresh", async (req, res) => {
   try {
     const { refresh_token } = req.body;
     if (!refresh_token) return res.status(400).json({ error: "No refresh token" });
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+    const { data, error } = await authClient.auth.refreshSession({ refresh_token });
     if (error || !data?.session) return res.status(401).json({ error: "Could not refresh" });
     res.json({
       access_token: data.session.access_token,
