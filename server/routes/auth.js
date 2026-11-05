@@ -1,5 +1,6 @@
 import express from "express";
 import supabase, { authClient } from "../lib/supabase.js";
+import { registerGuard, limit } from "../lib/registerGuard.js";
 import stripe from "../lib/stripe.js";
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -7,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const router = express.Router();
 
 // ── Register a new family ─────────────────────────────────────────────────────
-router.post("/register", async (req, res) => {
+router.post("/register", registerGuard, async (req, res) => {
   try {
     const { email, password, familyName, parentName, familyEmail, members: extraMembers } = req.body;
     if (!email || !password || !familyName || !parentName) {
@@ -113,7 +114,7 @@ router.post("/register", async (req, res) => {
 });
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-router.post("/login", async (req, res) => {
+router.post("/login", limit("login", 15, 15 * 60 * 1000), async (req, res) => {
   try {
     const { email, password } = req.body;
     const { data, error } = await authClient.auth.signInWithPassword({ email, password });
@@ -158,7 +159,7 @@ router.get("/me", async (req, res) => {
 });
 
 // ── Password reset ────────────────────────────────────────────────────────────
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", limit("reset", 5, 60 * 60 * 1000), async (req, res) => {
   try {
     const { email } = req.body;
     const { error } = await authClient.auth.resetPasswordForEmail(email, {
