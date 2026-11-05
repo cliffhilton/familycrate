@@ -74,7 +74,7 @@ const EMAILS = {
       <p style="color:#344F62;line-height:1.75;">If FamilyCrate has been working — chores getting done, less nagging, kids actually engaged — this is a good time to lock in your plan.</p>
       <div style="background:#FDF5DC;border:1.5px solid #EDD898;border-radius:12px;padding:20px 24px;margin:20px 0;">
         <p style="margin:0 0 4px;font-size:13px;color:#C49A3C;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Your options</p>
-        <p style="margin:0;color:#1A2A38;font-size:15px;"><strong>Monthly</strong> — $19/mo &nbsp;·&nbsp; <strong>Yearly</strong> — $190/yr <span style="color:#3A9A5A;font-size:13px;">(save 2 months)</span></p>
+        <p style="margin:0;color:#1A2A38;font-size:15px;"><strong>Monthly</strong> — $19/mo &nbsp;·&nbsp; <strong>Yearly</strong> — $159/yr <span style="color:#3A9A5A;font-size:13px;">(save 30%)</span></p>
       </div>
       <p style="color:#344F62;line-height:1.75;font-size:14px;">No contracts. Cancel anytime.</p>
       ${btn("Lock in my plan →", "https://www.familycrate.co/subscription")}
@@ -106,42 +106,77 @@ const EMAILS = {
 };
 
 // ── Scheduler ─────────────────────────────────────────────────────────────────
+async function parentFirstName(family) {
+  const { data: members } = await supabase
+    .from("members").select("name, email, role").eq("family_id", family.id);
+  const owner = (family.owner_email || "").toLowerCase();
+  const m = members?.find(x => x.email && x.email.toLowerCase() === owner)
+         || members?.find(x => x.role === "admin");
+  return m?.name?.split(" ")[0] || "there";
+}
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+const COMPED_FROM = new Date("2090-01-01");
+const OWNER_EMAILS = ["cliffhilton@gmail.com"];
+
+// [type, first day it may go out, last day it may still go out, audience]
+const SCHEDULE = [
+  ["day3",  3,  5,  "all"],
+  ["day10", 10, 11, "trial"],
+  ["day30", 30, 33, "paid"],
+  ["day37", 37, 40, "paid"],
+];
+
 async function sendScheduledEmails() {
   try {
     const now = new Date();
-    const { data: families } = await supabase
+    const { data: families, error: famErr } = await supabase
       .from("families")
-      .select("id, owner_email, family_name, created_at")
+      .select("id, owner_email, family_name, created_at, subscription_status, trial_ends_at")
       .not("owner_email", "is", null);
-
+    if (famErr) { console.error("Email scheduler: cannot read families:", famErr.message); return; }
     if (!families?.length) return;
 
-    const { data: sentLogs } = await supabase
-      .from("email_log")
-      .select("family_id, email_type");
-
-    const sent = new Set(sentLogs?.map(l => `${l.family_id}:${l.email_type}`) || []);
+    // Fail closed: if the log cannot be read, send nothing at all.
+    const { error: logErr } = await supabase.from("email_log").select("family_id").limit(1);
+    if (logErr) { console.error("Email scheduler: email_log unreadable, sending nothing:", logErr.message); return; }
 
     for (const family of families) {
-      const daysSince = Math.floor((now - new Date(family.created_at)) / (1000 * 60 * 60 * 24));
-      const parentName = family.family_name?.split(" ")[0] || "there";
+      if (OWNER_EMAILS.includes(family.owner_email)) continue;
+      const trialEnd = family.trial_ends_at ? new Date(family.trial_ends_at) : null;
+      if (trialEnd && trialEnd >= COMPED_FROM) continue;
+      const isPaid = family.subscription_status === "active";
+      const trialOver = !isPaid && trialEnd && trialEnd < now;
+      const daysSince = Math.floor((now - new Date(family.created_at)) / DAY_MS);
 
-      for (const [type, daysNeeded] of [["day3",3],["day10",10],["day30",30],["day37",37]]) {
-        const key = `${family.id}:${type}`;
-        if (daysSince >= daysNeeded && !sent.has(key)) {
-          const email = EMAILS[type];
-          try {
-            await resend.emails.send({
-              from: "Cliff at FamilyCrate <cliff@familycrate.co>",
-              to: family.owner_email,
-              subject: email.subject,
-              html: email.html(parentName, family.family_name),
-            });
-            await supabase.from("email_log").insert({ family_id: family.id, email_type: type });
-            console.log(`Sent ${type} to ${family.owner_email}`);
-          } catch (err) {
-            console.error(`Failed ${type} to ${family.owner_email}:`, err);
-          }
+      for (const [type, from, to, audience] of SCHEDULE) {
+        if (daysSince < from || daysSince > to) continue;
+        if (audience === "trial" && (isPaid || trialOver)) continue;
+        if (audience === "paid" && !isPaid) continue;
+        if (audience === "all" && trialOver) continue;
+
+        const { data: already } = await supabase.from("email_log").select("family_id")
+          .eq("family_id", family.id).eq("email_type", type).limit(1);
+        if (already?.length) continue;
+
+        // Claim first, then send. If the claim fails, never send.
+        const { error: claimErr } = await supabase.from("email_log")
+          .insert({ family_id: family.id, email_type: type });
+        if (claimErr) { console.error("Email scheduler: could not log " + type + ":", claimErr.message); continue; }
+
+        const name = await parentFirstName(family);
+        const email = EMAILS[type];
+        const { error: sendErr } = await resend.emails.send({
+          from: "Cliff at FamilyCrate <cliff@familycrate.co>",
+          to: family.owner_email,
+          subject: email.subject,
+          html: email.html(name, family.family_name),
+        });
+        if (sendErr) {
+          console.error("Failed " + type + " to " + family.owner_email + ":", sendErr);
+          await supabase.from("email_log").delete().eq("family_id", family.id).eq("email_type", type);
+        } else {
+          console.log("Sent " + type + " to " + family.owner_email);
         }
       }
     }
