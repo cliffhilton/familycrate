@@ -74,6 +74,7 @@ app.get("/login", (req, res) => res.sendFile("login.html", { root: __dirname + "
 app.get("/subscription", (req, res) => res.sendFile("subscription.html", { root: __dirname + "/public" }));
 app.get("/privacy", (req, res) => res.sendFile("privacy.html", { root: __dirname + "/public" }));
 app.get("/terms", (req, res) => res.sendFile("terms.html", { root: __dirname + "/public" }));
+app.get("/reset-password", (req, res) => res.sendFile("reset-password.html", { root: __dirname + "/public" }));
 app.get("/guide", (req, res) => res.sendFile("guide.html", { root: __dirname + "/public" }));
 app.get("/about", (req, res) => res.sendFile("about.html", { root: __dirname + "/public" }));
 // Serve React app from /app

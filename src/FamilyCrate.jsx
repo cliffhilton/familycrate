@@ -1158,6 +1158,7 @@ function FamilyCrate({ apiData, onLogout }) {
   },[items, events]);
 
   const setView=v=>{
+    if(v==="settings"&&!pinUnlocked){ setPinModal(parentPin?"enter":"setup"); return; }
     setView_(v);
     // Lock settings when navigating away
     if(v!=="settings") setPinUnlocked(false);
@@ -1192,7 +1193,7 @@ function FamilyCrate({ apiData, onLogout }) {
   const [rdModal,setRdModal]     = useState(null);
   const [confirmModal,setConfirmModal] = useState(null);
   const [pinModal,setPinModal]       = useState(null);
-  const [parentPin,setParentPin]     = useState(()=>localStorage.getItem("fc_pin")||"");
+  const [parentPin,setParentPin]     = useState(()=>localStorage.getItem("fc_pin_"+(localStorage.getItem("fc_family_id")||""))||"");
   const [pinUnlocked,setPinUnlocked] = useState(false);
   const [googleEvents,setGoogleEvents] = useState([]);
   const [googleConnected,setGoogleConnected] = useState(false);
@@ -2125,7 +2126,7 @@ function FamilyCrate({ apiData, onLogout }) {
           </div>
         </div>
       )}
-      {pinModal&&<PinModal isSetup={pinModal==="setup"} currentPin={parentPin} onSuccess={pin=>{if(pinModal==="setup"){localStorage.setItem("fc_pin",pin);setParentPin(pin);}setPinUnlocked(true);setPinModal(null);setView_("settings");}} onClose={()=>setPinModal(null)}/>}
+      {pinModal&&<PinModal isSetup={pinModal==="setup"} currentPin={parentPin} onSuccess={pin=>{if(pinModal==="setup"){localStorage.setItem("fc_pin_"+(localStorage.getItem("fc_family_id")||""),pin);setParentPin(pin);}setPinUnlocked(true);setPinModal(null);setView_("settings");}} onClose={()=>setPinModal(null)}/>}
     </>
   );
 }

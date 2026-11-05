@@ -162,7 +162,7 @@ router.post("/reset-password", async (req, res) => {
   try {
     const { email } = req.body;
     const { error } = await authClient.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://familycrate.co/reset",
+      redirectTo: "https://www.familycrate.co/reset-password",
     });
     if (error) return res.status(400).json({ error: error.message });
     res.json({ success: true });
@@ -182,6 +182,22 @@ router.post("/refresh", async (req, res) => {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Set a new password (from the reset email link) ───────────────────────────
+router.post("/update-password", async (req, res) => {
+  try {
+    const { access_token, password } = req.body;
+    if (!access_token || !password) return res.status(400).json({ error: "Missing token or password" });
+    if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
+    const { data: { user }, error } = await supabase.auth.getUser(access_token);
+    if (error || !user) return res.status(401).json({ error: "This reset link has expired. Request a new one." });
+    const { error: upErr } = await supabase.auth.admin.updateUserById(user.id, { password });
+    if (upErr) return res.status(500).json({ error: upErr.message });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
